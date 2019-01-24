@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # 2 bytes payload, 8 MHz sample-rate
     myPacket = ZigBeePacket(2, sampleRate)
     # sample rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
-    myChannel = WirelessChannel(8, 130e3, 100, 0)
+    myChannel = WirelessChannel(8, 130e3, 10, 8)
     receivedMessage = myChannel.receive(myPacket.IQ)
     # ideal and received phases
     idealUnwrappedPhase = np.unwrap(np.angle(myPacket.IQ))
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     plt.ylabel("phase (rad)")
     plt.xlabel("time (us)")
     plt.show()
-
+    # in-phase signals comparison - ideal, received and reconstructed
     inphaseTx, = plt.plot(timeUs, myPacket.I[:nbOfSamplesToPlot], '-b')
     inphaseRx, = plt.plot(timeUs, receivedMessage.real[:nbOfSamplesToPlot], '-r')
     inphaseCorrected, = plt.plot(timeUs, correctedMessage.real[:nbOfSamplesToPlot], 'kx')
@@ -107,4 +107,12 @@ if __name__ == "__main__":
     plt.title("TRANSMITTED, RECEIVED AND CORRECTED IN-PHASE")
     plt.ylabel("voltage")
     plt.xlabel("time (us)")
+    plt.show()
+    # Constellation
+    transmitted, = plt.plot(myPacket.IQ.real, myPacket.IQ.imag, '-bo')
+    transmitted.set_linewidth(4)
+    received, = plt.plot(correctedMessage.real, correctedMessage.imag, '-rx')
+    received.set_linewidth(0.5)
+    plt.title("O-QPSK CONSTELLATION DIAGRAM")
+    plt.legend([transmitted, received], ['IDEAL', 'DISTORTED'], loc=3)
     plt.show()
