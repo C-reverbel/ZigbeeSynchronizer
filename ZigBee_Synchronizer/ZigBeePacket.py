@@ -1,0 +1,105 @@
+import random
+import numpy as np
+import matplotlib.pyplot as plt
+
+symbol2Chip = {
+    "0000" : "01110100010010101100001110011011",
+    "0001" : "01000100101011000011100110110111",
+    "0010" : "01001010110000111001101101110100",
+    "0011" : "10101100001110011011011101000100",
+    "0100" : "11000011100110110111010001001010",
+    "0101" : "00111001101101110100010010101100",
+    "0110" : "10011011011101000100101011000011",
+    "0111" : "10110111010001001010110000111001",
+    "1000" : "11011110111000000110100100110001",
+    "1001" : "11101110000001101001001100011101",
+    "1010" : "11100000011010010011000111011110",
+    "1011" : "00000110100100110001110111101110",
+    "1100" : "01101001001100011101111011100000",
+    "1101" : "10010011000111011110111000000110",
+    "1110" : "00110001110111101110000001101001",
+    "1111" : "00011101111011100000011010010011"
+} # formatted in MSB first
+
+class ZigBeePacket:
+    def __init__(self, preambleNbOfBytes, simulationFrequency):
+        # variables in symbols
+        self.preambleInSymbol    = ["0000", "0000",
+                                    "0000", "0000",
+                                    "0000", "0000",
+                                    "0000", "0000"]
+        self.SFDInSymbol         = ["1010", "0111"]
+        self.PHRInSymbol         = self.computePHR(preambleNbOfBytes)
+        self.payloadInSymbol     = self.randomPayload(preambleNbOfBytes)
+        # variables formatted in chip (already formatted to be sent)
+        self.preamble = self.symbolToChip(self.preambleInSymbol)
+        self.SFD      = self.symbolToChip(self.SFDInSymbol)
+        self.PHR      = self.symbolToChip(self.PHRInSymbol)
+        self.payload  = self.symbolToChip(self.payloadInSymbol)
+        # final message formatted in +1 to -1 range
+        self.messageInChip  = self.preamble + self.SFD + self.PHR + self.payload
+        self.messageI       = self.messageInChip[0::2]
+        self.messageQ       = self.messageInChip[1::2]
+        # I and Q oversampled in +1 to -1 range
+        self.oversampledI   = self.oversampleMessage(self.messageI, simulationFrequency)
+        self.oversampledQ   = self.oversampleMessage(self.messageQ, simulationFrequency)
+        # I and Q fully formatted in half-sine format
+        self.tempI = self.halfSineShaping(self.oversampledI, simulationFrequency)
+        self.tempQ = self.halfSineShaping(self.oversampledQ, simulationFrequency)
+        tempZeros  = np.zeros(simulationFrequency / 2)
+        self.Q     = np.insert(self.tempQ, 0, tempZeros)
+        self.I     = np.insert(self.tempI, self.tempI.__len__(), tempZeros)
+        self.IQ    = self.I + 1j * self.Q
+
+    def computePHR(self, preambleNbOfBytes):
+        temp = "0" + '{0:07b}'.format(preambleNbOfBytes)
+        return [temp[:4], temp[4:]]
+
+    def randomPayload(self, preambleNbOfBytes):
+        result = []
+        for i in range(preambleNbOfBytes * 2):
+            result.append('{0:04b}'.format(random.randint(0,15)))
+        return result
+
+    def symbolToChip(self, field):
+        fieldSizeInBytes = field.__len__() / 2
+        result = ""
+        for i in range(fieldSizeInBytes):
+            temp = symbol2Chip[field[2 * i + 1]]
+            result += temp[::-1]
+            temp = symbol2Chip[field[2 * i]]
+            result += temp[::-1]
+        # result is in LSB first format
+        return result
+
+    def oversampleMessage(self, message, simulationFrequency):
+        result = []
+        for i in range(message.__len__()):
+            for j in range(simulationFrequency): # bit periode = 1 / 1 MHz
+                result.append(str(2 * int(message[i]) - 1))
+        return result
+
+    def halfSineShaping(self, message, simulationFrequency):
+        x = np.arange(message.__len__())
+        halfSine = np.abs(np.sin(np.pi * x / simulationFrequency))
+        messageInt = map(int, message)
+        result = halfSine * messageInt
+        return result
+
+
+if __name__ == "__main__":
+    simFreq = 8
+    payloadSize = 2
+    myPacket = ZigBeePacket(payloadSize, simFreq)
+
+    plt.plot(myPacket.I, myPacket.Q, '--bo')
+    plt.title("O-QPSK CONSTELLATION DIAGRAM")
+    plt.show()
+
+    inphase,    = plt.plot(myPacket.IQ.real[:100], '--ro')
+    quadrature, = plt.plot(myPacket.IQ.imag[:100], '--bo')
+    plt.legend([inphase, quadrature], ['IN-PHASE', 'QUADRATURE'])
+    plt.title("BEGINNING OF ZIGBEE PREAMBLE")
+    plt.ylabel("voltage")
+    plt.xlabel("samples")
+    plt.show()
