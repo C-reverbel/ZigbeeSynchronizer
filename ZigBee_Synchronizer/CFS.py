@@ -16,6 +16,16 @@ class CFS:
         fit = np.polyfit(time[2:], phaseDifference[2:self.nbOfSamples], 1)
         # return estimated frequency in Hz
         return fit[0] / (2 * np.pi)
+
+    def estimatePhase(self, phaseDifference):
+        maxTime    = (1e-6 / self.sampleRate) * self.nbOfSamples
+        timeStep   = 1e-6 / self.sampleRate
+        time = np.arange(0, maxTime, timeStep)
+
+        fit = np.polyfit(time[2:], phaseDifference[2:self.nbOfSamples], 1)
+        # return estimated phase in degrees
+        return fit[1] * 180 / np.pi
+
     # freq in Hz, phase in degree, signal in complex form (I + jQ)
     def compensateFrequencyAndPhase(self, freq, phase, signal):
         n = np.arange(signal.__len__())
@@ -26,13 +36,14 @@ class CFS:
         result = resultReal + 1j * resultImag
         return result
 
+
 if __name__ == "__main__":
     nbOfSamples = 128
     sampleRate = 8
     # 2 bytes payload, 8 MHz sample-rate
     myPacket = ZigBeePacket(2, sampleRate)
     # sample rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
-    myChannel = WirelessChannel(8, 130e3, 0, 0)
+    myChannel = WirelessChannel(8, 130e3, 100, 0)
     receivedMessage = myChannel.receive(myPacket.IQ)
     # ideal and received phases
     idealUnwrappedPhase = np.unwrap(np.angle(myPacket.IQ))
@@ -41,7 +52,10 @@ if __name__ == "__main__":
     # sample rate (MHz), number of samples - 2 to compute linear regression
     freqEstimator = CFS(sampleRate, nbOfSamples)
     freqOffset = freqEstimator.estimateFrequency(phaseDifference)
-    correctedMessage = freqEstimator.compensateFrequencyAndPhase(freqOffset, 0, receivedMessage)
+    phaseOffset = freqEstimator.estimatePhase(phaseDifference)
+    print "Estimated frequency offset = " + str(freqOffset) + " Hz"
+    print "Estimated phase offset = " + str(phaseOffset) + " Degrees"
+    correctedMessage = freqEstimator.compensateFrequencyAndPhase(freqOffset, phaseOffset, receivedMessage)
 
     correctedUnwrappedPhase = np.unwrap(np.angle(correctedMessage))
 
