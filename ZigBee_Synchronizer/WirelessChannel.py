@@ -10,23 +10,48 @@ class WirelessChannel:
         self.SNR         = SNR
 
     def receive(self, message):
-        n = np.arange(message.__len__())
+        N = message.__len__()
+        n = np.arange(N)
+
         cos = np.cos(2 * np.pi * 1e-6 * self.freqOffset * n / self.sampleRate + np.pi * self.phaseOffset / 180)
         sin = np.sin(2 * np.pi * 1e-6 * self.freqOffset * n / self.sampleRate + np.pi * self.phaseOffset / 180)
         resultReal = message.real * cos - message.imag * sin
         resultImag = message.imag * cos + message.real * sin
-        result = resultReal + 1j * resultImag
+        tempResult = resultReal + 1j * resultImag
+
+        signalPower = self._computeSignalPower(tempResult)
+        noise = self._computeNoiseSignal(signalPower, self.SNR, N)
+
+        result = (tempResult.real + noise / np.sqrt(2)) + 1j * (tempResult.imag + noise / np.sqrt(2))
         return result
+
+    def _computeSignalPower(self, signal):
+        N = signal.__len__()
+        signalAbs = abs(signal)
+        energy = 0
+        for i in range(N):
+            energy += signalAbs[i] * signalAbs[i]
+        power = energy / N
+        return power
+
+    def _computeNoiseSignal(self, signalPower, SNR, N):
+        standardDev = np.sqrt(signalPower * 10 **(-SNR/10))
+        noise = np.random.normal(0,standardDev,N)
+        return noise
 
 
 if __name__ == "__main__":
-    # todo implement SNR parameter
     # 2 bytes payload, 8 MHz sample-rate
     myPacket = ZigBeePacket(2,8)
     # sample rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
-    myChannel = WirelessChannel(8, 5e3, 10, 0)
+    myChannel = WirelessChannel(8, 5e3, 10, 500)
+
+    signalPower =  myChannel._computeSignalPower(myPacket.IQ)
     receivedMessage = myChannel.receive(myPacket.IQ)
 
+
+
+    ## PLOTS
     # CONSTELLATION PLOT
     transmitted, = plt.plot(myPacket.IQ.real, myPacket.IQ.imag, '-bo')
     transmitted.set_linewidth(4)
@@ -35,7 +60,6 @@ if __name__ == "__main__":
     plt.title("O-QPSK CONSTELLATION DIAGRAM")
     plt.legend([transmitted, received], ['IDEAL', 'DISTORTED'], loc=3)
     plt.show()
-
     # TIME-DOMAIN PLOT
     ## Transmitted IQ signals
     inphaseTx, = plt.plot(myPacket.IQ.real[:100], '--ro')
@@ -72,4 +96,9 @@ if __name__ == "__main__":
     plt.title("COMPARISON: QUADRATURE SIGNALS")
     plt.ylabel("voltage")
     plt.xlabel("samples")
+    plt.show()
+    ## plot spectrum
+    spectrum = 10 * np.log10(np.fft.fft(myPacket.IQ))
+    spectrum = np.roll(spectrum, spectrum.__len__()/2)
+    plt.plot(spectrum, '-b')
     plt.show()
