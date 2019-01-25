@@ -27,6 +27,19 @@ class CFS:
         # return estimated phase in degrees
         return fit[1] * 180 / np.pi
 
+    def estimateFrequencyAndPhase(self, phaseDifference):
+        maxTime = (1e-6 / self.sampleRate) * self.nbOfSamples
+        timeStep = 1e-6 / self.sampleRate
+        time = np.arange(0, maxTime, timeStep)
+
+        fit = np.polyfit(time[self.samplesOffset:self.nbOfSamples],
+                         phaseDifference[self.samplesOffset:self.nbOfSamples], 1)
+        # estimated frequency in Hz
+        freq =  fit[0] / (2 * np.pi)
+        # estimated phase in degrees
+        phase = fit[1] * 180 / np.pi
+        return freq, phase
+
     # freq in Hz, phase in degree, signal in complex form (I + jQ)
     def compensateFrequencyAndPhase(self, freq, phase, signal):
         n = np.arange(signal.__len__())
@@ -61,12 +74,11 @@ if __name__ == "__main__":
     freqOffsetEstimated = freqEstimator.estimateFrequency(phaseDifference)
     phaseOffsetEstimated = freqEstimator.estimatePhase(phaseDifference)
 
-    # correct received signal with estimated frequency and phase offset
+    # CORRECTION 1
     correctedMessage = freqEstimator.compensateFrequencyAndPhase(freqOffsetEstimated, phaseOffsetEstimated, receivedMessage)
-
-    idealUnwrappedPhase = np.unwrap(np.angle(myPacket.IQ))
     correctedUnwrappedPhase = np.unwrap(np.angle(correctedMessage))
     phaseDifferenceCorrected = correctedUnwrappedPhase - idealUnwrappedPhase
+
 
     print "Zigbee packet number of samples = " + str(myPacket.IQ.__len__())
     print "Sample rate = " + str(sampleRate) + " MHz"
@@ -76,17 +88,18 @@ if __name__ == "__main__":
 
     print "Estimated frequency offset = " + str(freqOffsetEstimated / 1000) + " kHz"
     print "Estimated phase offset = " + str(phaseOffsetEstimated) + " Degrees"
+    print "Frequency error = " + str((freqOffset - freqOffsetEstimated)) + " Hz"
+    print "Phase error = " + str((phaseOffset - phaseOffsetEstimated)) + " Degrees"
 
 
     ## PLOT
-    correctedUnwrappedPhase = np.unwrap(np.angle(correctedMessage))
-    nbOfSamplesToPlot = 20000
-    maxTime = (1e-6 / sampleRate) * (nbOfSamplesToPlot)
+    N = myPacket.I.__len__()
+    nbOfSamplesToPlot = nbOfSamples
+
+    maxTime = (1e-6 / sampleRate) * N
     timeStep = 1e-6 / sampleRate
     timeUs = np.arange(0, maxTime, timeStep) * 1e6
 
-    print timeUs.__len__()
-    print myPacket.IQ[:nbOfSamplesToPlot].__len__()
     # wrapped and unwrapped ideal phase
     wrapped, = plt.plot(timeUs[:nbOfSamplesToPlot], np.angle(myPacket.IQ[:nbOfSamplesToPlot]), '-b')
     unwrapped, = plt.plot(timeUs[:nbOfSamplesToPlot], idealUnwrappedPhase[:nbOfSamplesToPlot], '-r')
@@ -119,17 +132,20 @@ if __name__ == "__main__":
     plt.ylabel("phase (rad)")
     plt.xlabel("time (us)")
     plt.show()
+
+    nbOfSamplesToPlot = N
+
+    # Constellation
+    transmitted, = plt.plot(myPacket.IQ.real[:nbOfSamplesToPlot], myPacket.IQ.imag[:nbOfSamplesToPlot], '-bo')
+    received, = plt.plot(correctedMessage.real[:nbOfSamplesToPlot], correctedMessage.imag[:nbOfSamplesToPlot], '-r')
+    plt.legend([transmitted, received], ['IDEAL', 'DISTORTED'], loc=3)
+    transmitted.set_linewidth(4)
+    received.set_linewidth(0.1)
+    plt.title("O-QPSK CONSTELLATION DIAGRAM")
+    plt.show()
     # phase difference
     plt.plot(timeUs[:nbOfSamplesToPlot], phaseDifferenceCorrected[:nbOfSamplesToPlot], '-k')
     plt.title("TRANSMITTED AND CORRECTED PHASE DIFFERENCE")
     plt.ylabel("phase difference (rad)")
     plt.xlabel("time (us)")
-    plt.show()
-    # Constellation
-    transmitted, = plt.plot(myPacket.IQ.real, myPacket.IQ.imag, '-bo')
-    transmitted.set_linewidth(4)
-    received, = plt.plot(correctedMessage.real, correctedMessage.imag, '-rx')
-    received.set_linewidth(0.5)
-    plt.title("O-QPSK CONSTELLATION DIAGRAM")
-    plt.legend([transmitted, received], ['IDEAL', 'DISTORTED'], loc=3)
     plt.show()
