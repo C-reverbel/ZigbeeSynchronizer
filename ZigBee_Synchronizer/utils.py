@@ -6,16 +6,33 @@ from ZigBeePacket import ZigBeePacket
 from WirelessChannel import WirelessChannel
 
 
-def butter_lowpass(cutoff, fs, order=5):
+def _butter_lowpass(cutoff, fs, order=5):
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
     return b, a
 
 def butter_lowpass_filter(data, cutoff, fs, order=5):
-    b, a = butter_lowpass(cutoff, fs, order=order)
+    b, a = _butter_lowpass(cutoff, fs, order=order)
     y = lfilter(b, a, data)
     return y
+
+# sampleRate in MHz
+def plotSpectrum(data, sampleRate, title = "POWER SPECTRUM DENSITY"):
+    N = data.__len__()
+    f = 1e-6 * np.arange(-sampleRate * 0.5e6, sampleRate * 0.5e6, sampleRate * 1e6 / N)
+
+    spectrum = 20 * np.log10(abs(np.fft.fft(data))) + 30
+    spectrum = np.roll(spectrum, N / 2)
+
+    myPlot, = plt.plot(f, spectrum, '-b')
+    myPlot.set_linewidth(0.5)
+    plt.title(title)
+    plt.ylabel("Energy (dBm)")
+    plt.xlabel("frequency (MHz)")
+    plt.ylim(20, max(spectrum) + 5)
+    plt.xlim(-sampleRate / 2, sampleRate / 2)
+    plt.show()
 
 
 if __name__ == "__main__":

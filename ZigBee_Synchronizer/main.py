@@ -6,6 +6,7 @@
 from ZigBeePacket import ZigBeePacket
 from WirelessChannel import WirelessChannel
 from CFS import CFS
+import utils
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -17,7 +18,7 @@ if __name__ == "__main__":
     SNR = 10
 
     # 2 bytes payload, 8 MHz sample-rate
-    myPacket = ZigBeePacket(127, sampleRate)
+    myPacket = ZigBeePacket(5, sampleRate)
 
     # sample rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
@@ -30,3 +31,5 @@ if __name__ == "__main__":
         freqEstimator.estimateFrequencyAndPhase(phaseDifference)
     preCorrectedSignal = \
         freqEstimator.compensateFrequencyAndPhase(freqOffsetEstimated, phaseOffsetEstimated, receivedSignal)
+
+    utils.plotSpectrum(myPacket.IQ,sampleRate)
