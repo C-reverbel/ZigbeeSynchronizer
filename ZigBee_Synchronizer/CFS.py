@@ -55,8 +55,8 @@ if __name__ == "__main__":
     # preamble lasts 1024 samples
     nbOfSamples = 1024
     sampleRate = 8
-    freqOffset = 200e3
-    phaseOffset = 20
+    freqOffset = 500e3
+    phaseOffset = 50
     SNR = 10
 
     # 2 bytes payload, 8 MHz sample-rate
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     freqOffsetEstimated = freqEstimator.estimateFrequency(phaseDifference)
     phaseOffsetEstimated = freqEstimator.estimatePhase(phaseDifference)
 
-    # CORRECTION 1
+    # PHASE AND FREQUENCY CORRECTION
     correctedMessage = freqEstimator.compensateFrequencyAndPhase(freqOffsetEstimated, phaseOffsetEstimated, receivedMessage)
     correctedUnwrappedPhase = np.unwrap(np.angle(correctedMessage))
     phaseDifferenceCorrected = correctedUnwrappedPhase - idealUnwrappedPhase
@@ -140,14 +140,6 @@ if __name__ == "__main__":
 
     nbOfSamplesToPlot = N
 
-    # Constellation
-    received, = plt.plot(correctedMessage.real[:nbOfSamplesToPlot], correctedMessage.imag[:nbOfSamplesToPlot], '-r')
-    transmitted, = plt.plot(myPacket.IQ.real[:nbOfSamplesToPlot], myPacket.IQ.imag[:nbOfSamplesToPlot], '-bo')
-    plt.legend([transmitted, received], ['IDEAL', 'DISTORTED'], loc=3)
-    transmitted.set_linewidth(4)
-    received.set_linewidth(0.1)
-    plt.title("O-QPSK CONSTELLATION DIAGRAM")
-    plt.show()
     # phase difference
     plt.plot(timeUs[:nbOfSamplesToPlot], 180 * phaseDifferenceCorrected[:nbOfSamplesToPlot] / np.pi, '-k')
     plt.grid(b=None, which='major', axis='y')
@@ -155,3 +147,16 @@ if __name__ == "__main__":
     plt.ylabel("phase difference (degree)")
     plt.xlabel("time (us)")
     plt.show()
+
+    # constellation plot
+    receivedConstellation, = plt.plot(correctedMessage.real[6:N - 2:4], correctedMessage.imag[6:N - 2:4], 'rx')
+    idealConstellation, = plt.plot(myPacket.I[6:N - 2:4], myPacket.Q[6:N - 2:4], 'bo')
+    plt.axvline(x=0)
+    plt.axhline(y=0)
+    plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
+    receivedConstellation.set_linewidth(0.1)
+    plt.ylim(-2, 2)
+    plt.xlim(-2, 2)
+    plt.title("CONSTELLATION - IDEAL VS CORRECTED")
+    plt.show()
+

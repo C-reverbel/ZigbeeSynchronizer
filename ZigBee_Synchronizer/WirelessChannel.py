@@ -134,4 +134,3 @@ if __name__ == "__main__":
     plt.ylim(30, 85)
     plt.xlim(-sampleRate/2, sampleRate/2)
     plt.show()
-
