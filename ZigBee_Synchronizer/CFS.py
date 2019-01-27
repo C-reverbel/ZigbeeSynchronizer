@@ -52,10 +52,11 @@ class CFS:
 
 
 if __name__ == "__main__":
-    nbOfSamples = 128
+    # preamble lasts 1024 samples
+    nbOfSamples = 1024
     sampleRate = 8
     freqOffset = 200e3
-    phaseOffset = 10
+    phaseOffset = 20
     SNR = 10
 
     # 2 bytes payload, 8 MHz sample-rate
@@ -104,9 +105,13 @@ if __name__ == "__main__":
     wrapped, = plt.plot(timeUs[:nbOfSamplesToPlot], np.angle(myPacket.IQ[:nbOfSamplesToPlot]), '-b')
     unwrapped, = plt.plot(timeUs[:nbOfSamplesToPlot], idealUnwrappedPhase[:nbOfSamplesToPlot], '-r')
     plt.legend([wrapped, unwrapped], ['WRAPPED PHASE', 'UNWRAPPED PHASE'], loc=2)
+    plt.grid(b=None, which='major', axis='both')
     plt.title("TRANSMITTED PHASE")
     plt.ylabel("phase (rad)")
     plt.xlabel("time (us)")
+    plt.xticks(np.arange(0,nbOfSamplesToPlot / sampleRate + 0.5,0.5))
+    plt.yticks(np.arange(-2 * np.pi, max(idealUnwrappedPhase[:nbOfSamplesToPlot]) + np.pi / 2, np.pi / 2))
+    plt.xlim(0,nbOfSamplesToPlot / sampleRate)
     plt.show()
     # transmitted vs received unwrapped phase
     unwrappedTransmitted, = plt.plot(timeUs[:nbOfSamplesToPlot], idealUnwrappedPhase[:nbOfSamplesToPlot], '-b')
@@ -136,16 +141,17 @@ if __name__ == "__main__":
     nbOfSamplesToPlot = N
 
     # Constellation
-    transmitted, = plt.plot(myPacket.IQ.real[:nbOfSamplesToPlot], myPacket.IQ.imag[:nbOfSamplesToPlot], '-bo')
     received, = plt.plot(correctedMessage.real[:nbOfSamplesToPlot], correctedMessage.imag[:nbOfSamplesToPlot], '-r')
+    transmitted, = plt.plot(myPacket.IQ.real[:nbOfSamplesToPlot], myPacket.IQ.imag[:nbOfSamplesToPlot], '-bo')
     plt.legend([transmitted, received], ['IDEAL', 'DISTORTED'], loc=3)
     transmitted.set_linewidth(4)
     received.set_linewidth(0.1)
     plt.title("O-QPSK CONSTELLATION DIAGRAM")
     plt.show()
     # phase difference
-    plt.plot(timeUs[:nbOfSamplesToPlot], phaseDifferenceCorrected[:nbOfSamplesToPlot], '-k')
+    plt.plot(timeUs[:nbOfSamplesToPlot], 180 * phaseDifferenceCorrected[:nbOfSamplesToPlot] / np.pi, '-k')
+    plt.grid(b=None, which='major', axis='y')
     plt.title("TRANSMITTED AND CORRECTED PHASE DIFFERENCE")
-    plt.ylabel("phase difference (rad)")
+    plt.ylabel("phase difference (degree)")
     plt.xlabel("time (us)")
     plt.show()
