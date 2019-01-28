@@ -92,7 +92,6 @@ if __name__ == "__main__":
     payloadSize = 2
     myPacket = ZigBeePacket(payloadSize, simFreq)
 
-
     N = myPacket.Q.__len__()
 
     plt.plot(myPacket.I, myPacket.Q, '--bo')

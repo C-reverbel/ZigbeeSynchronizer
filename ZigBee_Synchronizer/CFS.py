@@ -89,8 +89,8 @@ if __name__ == "__main__":
 
     print "Estimated frequency offset = " + str(freqOffsetEstimated / 1000) + " kHz"
     print "Estimated phase offset = " + str(phaseOffsetEstimated) + " Degrees"
-    print "Frequency error = " + str((freqOffset - freqOffsetEstimated)) + " Hz"
-    print "Phase error = " + str((phaseOffset - phaseOffsetEstimated)) + " Degrees"
+    print "Frequency estimation error = " + str((freqOffset - freqOffsetEstimated)) + " Hz"
+    print "Phase estimation error = " + str((phaseOffset - phaseOffsetEstimated)) + " Degrees"
 
 
     ## PLOT
@@ -149,8 +149,8 @@ if __name__ == "__main__":
     plt.show()
 
     # constellation plot
-    receivedConstellation, = plt.plot(correctedMessage.real[6:N - 2:4], correctedMessage.imag[6:N - 2:4], 'rx')
-    idealConstellation, = plt.plot(myPacket.I[6:N - 2:4], myPacket.Q[6:N - 2:4], 'bo')
+    receivedConstellation, = plt.plot(correctedMessage.real[4::8], np.roll(correctedMessage.imag,-4)[4::8], 'rx')
+    idealConstellation, = plt.plot(myPacket.I[4::8], np.roll(myPacket.Q,-4)[4::8], 'bo')
     plt.axvline(x=0)
     plt.axhline(y=0)
     plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
