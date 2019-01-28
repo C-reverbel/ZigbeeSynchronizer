@@ -34,6 +34,14 @@ def plotSpectrum(data, sampleRate, title = "POWER SPECTRUM DENSITY"):
     plt.xlim(-sampleRate / 2, sampleRate / 2)
     plt.show()
 
+def calcAverageError(vectOne, vectTwo):
+    N = vectOne.__len__()
+    errVector = abs(vectOne - vectTwo)
+    return sum(errVector) / N
+
+def convertToQPSK(vector, sampleRate):
+    return vector.real + 1j * np.roll(vector.imag, - sampleRate / 2)
+
 
 if __name__ == "__main__":
     sampleRate = 8

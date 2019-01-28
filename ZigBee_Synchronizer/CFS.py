@@ -53,11 +53,11 @@ class CFS:
 
 if __name__ == "__main__":
     # preamble lasts 1024 samples
-    nbOfSamples = 1024
+    nbOfSamples = 128
     sampleRate = 8
     freqOffset = 500e3
     phaseOffset = 50
-    SNR = 10
+    SNR = 100
 
     # 2 bytes payload, 8 MHz sample-rate
     myPacket = ZigBeePacket(127, sampleRate)
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     plt.xlabel("time (us)")
     plt.show()
     # phase difference
-    plt.plot(timeUs[:nbOfSamplesToPlot], phaseDifference[:nbOfSamplesToPlot], '-k')
+    plt.plot(timeUs[:nbOfSamplesToPlot], phaseDifference[:nbOfSamplesToPlot], '-ko')
     plt.title("TRANSMITTED AND RECEIVED PHASE DIFFERENCE")
     plt.ylabel("phase difference (rad)")
     plt.xlabel("time (us)")
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     plt.xlabel("time (us)")
     plt.show()
 
-    # constellation plot
+    # constellation plot: QPSK
     receivedConstellation, = plt.plot(correctedMessage.real[4::8], np.roll(correctedMessage.imag,-4)[4::8], 'rx')
     idealConstellation, = plt.plot(myPacket.I[4::8], np.roll(myPacket.Q,-4)[4::8], 'bo')
     plt.axvline(x=0)
@@ -157,6 +157,19 @@ if __name__ == "__main__":
     receivedConstellation.set_linewidth(0.1)
     plt.ylim(-2, 2)
     plt.xlim(-2, 2)
-    plt.title("CONSTELLATION - IDEAL VS CORRECTED")
+    plt.title("QPSK CONSTELLATION - IDEAL VS CORRECTED")
     plt.show()
+
+    # constellation plot: O-QPSK
+    receivedConstellation, = plt.plot(correctedMessage.real[6:N-2:4], correctedMessage.imag[6:N-2:4], 'rx')
+    idealConstellation, = plt.plot(myPacket.I[6:N-2:4], myPacket.Q[6:N-2:4], 'bo')
+    plt.axvline(x=0)
+    plt.axhline(y=0)
+    plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
+    receivedConstellation.set_linewidth(0.1)
+    plt.ylim(-2, 2)
+    plt.xlim(-2, 2)
+    plt.title("O-QPSK CONSTELLATION - IDEAL VS CORRECTED")
+    plt.show()
+
 

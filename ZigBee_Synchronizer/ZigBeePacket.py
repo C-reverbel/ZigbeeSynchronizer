@@ -50,6 +50,7 @@ class ZigBeePacket:
         self.Q     = np.insert(self.tempQ, 0, tempZeros)
         self.I     = np.insert(self.tempI, self.tempI.__len__(), tempZeros)
         self.IQ    = self.I + 1j * self.Q
+        self.IQ_QPSK = self.I + 1j * np.roll(self.Q,- (simulationFrequency / 2))
 
     def computePHR(self, preambleNbOfBytes):
         temp = "0" + '{0:07b}'.format(preambleNbOfBytes)
