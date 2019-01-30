@@ -8,7 +8,7 @@ class CFS2:
         self.sampleRate = sampleRate
         self.nbOfSamples = nbOfSamples
         self.estimatorBufferSize = 1
-        self.samplesOffset = 1
+        self.samplesOffset = 4
 
     def estimateFrequencyAndPhaseIterative(self, phaseDifference):
         N = phaseDifference.__len__()
@@ -22,7 +22,7 @@ class CFS2:
         sumXX = 0
         freq = np.zeros(N)
         phase = np.zeros(N)
-        for i in range(self.samplesOffset, self.nbOfSamples):
+        for i in range(self.samplesOffset, self.nbOfSamples + self.samplesOffset):
             n = i - self.samplesOffset + 1
             sumX += time[i]
             sumY += phaseDifference[i]
@@ -30,7 +30,6 @@ class CFS2:
             sumXX += time[i] * time[i]
             if i >= self.estimatorBufferSize:
                 freq[i] = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)
-                #phase[i] = (i * sumXX - freq[i] * sumX) / i
                 phase[i] = (sumY - freq[i] * sumX) / (n)
         # correct received signal
         for i in range(self.estimatorBufferSize):
@@ -57,17 +56,8 @@ class CFS2:
         timeStep = 1e-6 / self.sampleRate
         time = np.arange(0, maxTime, timeStep)
         return time * freq + phase
-    # freq in Hz, phase in degree, signal in complex form (I + jQ)
-    def compensateFrequencyAndPhase(self, freq, phase, signal):
-        n = np.arange(signal.__len__())
-        cos = np.cos(2 * np.pi * 1e-6 * freq * n / self.sampleRate + np.pi * phase / 180)
-        sin = np.sin(2 * np.pi * 1e-6 * freq * n / self.sampleRate + np.pi * phase / 180)
-        resultReal = signal.real * cos + signal.imag * sin
-        resultImag = - signal.real * sin + signal.imag * cos
-        result = resultReal + 1j * resultImag
-        return result
-
-    def compensatePhase(self,phase, signal):
+    # applies a rotation to each point of 'signal' by corresponding point in 'phase' vector
+    def compensatePhase(self, phase, signal):
         cos = np.cos(phase)
         sin = np.sin(phase)
         resultReal = signal.real * cos + signal.imag * sin
