@@ -96,7 +96,8 @@ if __name__ == "__main__":
 
     # sample rate (MHz), number of samples - 2 to compute linear regression
     synchronizer = CFS2(sampleRate, nbOfSamples)
-    freqOffsetVector, phaseOffsetVector, corrVector = synchronizer.estimateFrequencyAndPhaseIterative(phaseDifference)
+    freqOffsetVector, phaseOffsetVector = synchronizer.estimateFrequencyAndPhaseIterative(phaseDifference)
+    corrVector = synchronizer.generatePhaseVector(freqOffsetVector, phaseOffsetVector)
     # PHASE AND FREQUENCY CORRECTION
     correctedMessage = synchronizer.compensatePhase(corrVector, receivedMessage)
     correctedUnwrappedPhase = np.unwrap(np.angle(correctedMessage))
