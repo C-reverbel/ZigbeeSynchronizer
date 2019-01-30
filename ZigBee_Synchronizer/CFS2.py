@@ -40,14 +40,24 @@ class CFS2:
         for i in range(self.nbOfSamples, N):
             freq[i] = freq[self.nbOfSamples - 1]
             phase[i] = phase[self.nbOfSamples - 1]
-        compensateVector = time * freq + phase
         # format frequency and phase
         for i in range(N):
             freq[i] = freq[i] / (2 * np.pi)
             phase[i] = phase[i] * 180 / np.pi
         # freuency in Hz, phase in degrees
-        return freq, phase, compensateVector
-
+        return freq, phase
+    # generate vector to be applied on compensatePhase()
+    def generatePhaseVector(self, freqVect, phaseVect):
+        N = freqVect.__len__()
+        freq = np.zeros(N)
+        phase = np.zeros(N)
+        for i in range(N):
+            freq[i] = freqVect[i] * (2 * np.pi)
+            phase[i] = phaseVect[i] / (180 / np.pi)
+        maxTime = (1e-6 / self.sampleRate) * N
+        timeStep = 1e-6 / self.sampleRate
+        time = np.arange(0, maxTime, timeStep)
+        return time * freq + phase
     # freq in Hz, phase in degree, signal in complex form (I + jQ)
     def compensateFrequencyAndPhase(self, freq, phase, signal):
         n = np.arange(signal.__len__())
