@@ -60,3 +60,7 @@ if __name__ == "__main__":
     plt.xlim(-2, 2)
     plt.title("O-QPSK CONSTELLATION - IDEAL VS CORRECTED")
     plt.show()
+
+    plt.plot(freqOffsetEstimated[:1100])
+    plt.ylim(100000, 800000)
+    plt.show()

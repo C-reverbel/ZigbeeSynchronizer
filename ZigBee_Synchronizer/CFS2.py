@@ -7,7 +7,7 @@ class CFS2:
     def __init__(self, sampleRate, nbOfSamples):
         self.sampleRate = sampleRate
         self.nbOfSamples = nbOfSamples
-        self.estimatorBufferSize = 128
+        self.estimatorBufferSize = 1
         self.samplesOffset = 1
 
     def estimateFrequencyAndPhaseIterative(self, phaseDifference):
@@ -15,7 +15,6 @@ class CFS2:
         maxTime = (1e-6 / self.sampleRate) * N
         timeStep = 1e-6 / self.sampleRate
         time = np.arange(0, maxTime, timeStep)
-
         # estimate parameters recursively
         sumX = 0
         sumY = 0
