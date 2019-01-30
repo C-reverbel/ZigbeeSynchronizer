@@ -42,6 +42,9 @@ def calcAverageError(vectOne, vectTwo):
 def convertToQPSK(vector, sampleRate):
     return vector.real + 1j * np.roll(vector.imag, - sampleRate / 2)
 
+def extractPhase(signal):
+    return np.sign(signal.real) + 1j * np.sign(signal.imag)
+
 
 if __name__ == "__main__":
     sampleRate = 8

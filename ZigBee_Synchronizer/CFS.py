@@ -40,6 +40,38 @@ class CFS:
         phase = fit[1] * 180 / np.pi
         return freq, phase
 
+    def estimateFrequencyAndPhaseIterative(self, phaseDifference):
+        N = phaseDifference.__len__()
+        maxTime = (1e-6 / self.sampleRate) * N
+        timeStep = 1e-6 / self.sampleRate
+        time = np.arange(0, maxTime, timeStep)
+
+        # estimate parameters recursively
+        sumX = 0
+        sumY = 0
+        sumXY = 0
+        sumXX = 0
+        freq = np.zeros(N)
+        phase = np.zeros(N)
+        for i in range(self.samplesOffset, self.nbOfSamples):
+            sumX += time[i]
+            sumY += phaseDifference[i]
+            sumXY += time[i] * phaseDifference[i]
+            sumXX += time[i] * time[i]
+            freq[i] = (i * sumXY - sumX * sumY) / (i * sumXX - sumX * sumX)
+            # b[i] = (i * sumXX - a[i] * sumX) / i
+            phase[i] = (sumY - freq[i] * sumX) / i
+        # correct received signal
+        for i in range(self.nbOfSamples, N):
+            freq[i] = freq[self.nbOfSamples - 1]
+            phase[i] = phase[self.nbOfSamples - 1]
+        compensateVector = time * freq + phase
+        for i in range(N):
+            freq[i] = freq[i] / (2 * np.pi)
+            phase[i] = phase[i] * 180 / np.pi
+        # freuency in Hz, phase in degrees
+        return freq, phase, compensateVector
+
     # freq in Hz, phase in degree, signal in complex form (I + jQ)
     def compensateFrequencyAndPhase(self, freq, phase, signal):
         n = np.arange(signal.__len__())
@@ -50,6 +82,13 @@ class CFS:
         result = resultReal + 1j * resultImag
         return result
 
+    def compensatePhase(self,phase, signal):
+        cos = np.cos(phase)
+        sin = np.sin(phase)
+        resultReal = signal.real * cos + signal.imag * sin
+        resultImag = - signal.real * sin + signal.imag * cos
+        result = resultReal + 1j * resultImag
+        return result
 
 if __name__ == "__main__":
     # preamble lasts 1024 samples
