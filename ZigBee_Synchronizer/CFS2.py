@@ -3,42 +3,50 @@ from WirelessChannel import WirelessChannel
 import numpy as np
 import matplotlib.pyplot as plt
 
-class CFS:
+class CFS2:
     def __init__(self, sampleRate, nbOfSamples):
         self.sampleRate = sampleRate
         self.nbOfSamples = nbOfSamples
-        self.samplesOffset = 5
+        self.estimatorBufferSize = 128
+        self.samplesOffset = 1
 
-    def estimateFrequency(self, phaseDifference):
-        maxTime    = (1e-6 / self.sampleRate) * self.nbOfSamples
-        timeStep   = 1e-6 / self.sampleRate
-        time = np.arange(0, maxTime, timeStep)
-
-        fit = np.polyfit(time[self.samplesOffset:self.nbOfSamples], phaseDifference[self.samplesOffset:self.nbOfSamples], 1)
-        # return estimated frequency in Hz
-        return fit[0] / (2 * np.pi)
-
-    def estimatePhase(self, phaseDifference):
-        maxTime    = (1e-6 / self.sampleRate) * self.nbOfSamples
-        timeStep   = 1e-6 / self.sampleRate
-        time = np.arange(0, maxTime, timeStep)
-
-        fit = np.polyfit(time[self.samplesOffset:self.nbOfSamples], phaseDifference[self.samplesOffset:self.nbOfSamples], 1)
-        # return estimated phase in degrees
-        return fit[1] * 180 / np.pi
-
-    def estimateFrequencyAndPhase(self, phaseDifference):
-        maxTime = (1e-6 / self.sampleRate) * self.nbOfSamples
+    def estimateFrequencyAndPhaseIterative(self, phaseDifference):
+        N = phaseDifference.__len__()
+        maxTime = (1e-6 / self.sampleRate) * N
         timeStep = 1e-6 / self.sampleRate
         time = np.arange(0, maxTime, timeStep)
 
-        fit = np.polyfit(time[self.samplesOffset:self.nbOfSamples],
-                         phaseDifference[self.samplesOffset:self.nbOfSamples], 1)
-        # estimated frequency in Hz
-        freq =  fit[0] / (2 * np.pi)
-        # estimated phase in degrees
-        phase = fit[1] * 180 / np.pi
-        return freq, phase
+        # estimate parameters recursively
+        sumX = 0
+        sumY = 0
+        sumXY = 0
+        sumXX = 0
+        freq = np.zeros(N)
+        phase = np.zeros(N)
+        for i in range(self.samplesOffset, self.nbOfSamples):
+            n = i - self.samplesOffset + 1
+            sumX += time[i]
+            sumY += phaseDifference[i]
+            sumXY += time[i] * phaseDifference[i]
+            sumXX += time[i] * time[i]
+            if i >= self.estimatorBufferSize:
+                freq[i] = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)
+                #phase[i] = (i * sumXX - freq[i] * sumX) / i
+                phase[i] = (sumY - freq[i] * sumX) / (n)
+        # correct received signal
+        for i in range(self.estimatorBufferSize):
+            freq[i] = freq[self.estimatorBufferSize]
+            phase[i] = phase[self.estimatorBufferSize]
+        for i in range(self.nbOfSamples, N):
+            freq[i] = freq[self.nbOfSamples - 1]
+            phase[i] = phase[self.nbOfSamples - 1]
+        compensateVector = time * freq + phase
+        # format frequency and phase
+        for i in range(N):
+            freq[i] = freq[i] / (2 * np.pi)
+            phase[i] = phase[i] * 180 / np.pi
+        # freuency in Hz, phase in degrees
+        return freq, phase, compensateVector
 
     # freq in Hz, phase in degree, signal in complex form (I + jQ)
     def compensateFrequencyAndPhase(self, freq, phase, signal):
@@ -60,11 +68,11 @@ class CFS:
 
 if __name__ == "__main__":
     # preamble lasts 1024 samples
-    nbOfSamples = 128
+    nbOfSamples = 1024
     sampleRate = 8
     freqOffset = 500e3
-    phaseOffset = 50
-    SNR = 100
+    phaseOffset = 15
+    SNR = 10
 
     # 2 bytes payload, 8 MHz sample-rate
     myPacket = ZigBeePacket(127, sampleRate)
@@ -78,12 +86,10 @@ if __name__ == "__main__":
     phaseDifference = receivedUnwrappedPhase - idealUnwrappedPhase
 
     # sample rate (MHz), number of samples - 2 to compute linear regression
-    freqEstimator = CFS(sampleRate, nbOfSamples)
-    freqOffsetEstimated = freqEstimator.estimateFrequency(phaseDifference)
-    phaseOffsetEstimated = freqEstimator.estimatePhase(phaseDifference)
-
+    synchronizer = CFS2(sampleRate, nbOfSamples)
+    freqOffsetVector, phaseOffsetVector, corrVector = synchronizer.estimateFrequencyAndPhaseIterative(phaseDifference)
     # PHASE AND FREQUENCY CORRECTION
-    correctedMessage = freqEstimator.compensateFrequencyAndPhase(freqOffsetEstimated, phaseOffsetEstimated, receivedMessage)
+    correctedMessage = synchronizer.compensatePhase(corrVector, receivedMessage)
     correctedUnwrappedPhase = np.unwrap(np.angle(correctedMessage))
     phaseDifferenceCorrected = correctedUnwrappedPhase - idealUnwrappedPhase
 
@@ -94,10 +100,10 @@ if __name__ == "__main__":
     print "Phase offset = " + str(phaseOffset) + " Degrees"
     print "SNR = " + str(SNR) + " dB"
 
-    print "Estimated frequency offset = " + str(freqOffsetEstimated / 1000) + " kHz"
-    print "Estimated phase offset = " + str(phaseOffsetEstimated) + " Degrees"
-    print "Frequency estimation error = " + str((freqOffset - freqOffsetEstimated)) + " Hz"
-    print "Phase estimation error = " + str((phaseOffset - phaseOffsetEstimated)) + " Degrees"
+    print "Estimated frequency offset = " + str(freqOffsetVector[-1] / 1000) + " kHz"
+    print "Estimated phase offset = " + str(phaseOffsetVector[-1]) + " Degrees"
+    print "Frequency estimation error = " + str((freqOffset - freqOffsetVector[-1])) + " Hz"
+    print "Phase estimation error = " + str((phaseOffset - phaseOffsetVector[-1])) + " Degrees"
 
 
     ## PLOT
