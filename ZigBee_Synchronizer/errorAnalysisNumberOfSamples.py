@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # Zigbee packet
-    nbOfSamples = 1024
+    nbOfSamples = 128
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
     freqOffset = 500e3
@@ -37,30 +37,27 @@ if __name__ == "__main__":
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
     # receive signal and filter it (change filter order to ZERO to disable filtering)
     receivedSignal = np.roll(utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ), cutoff, fs, order),0)
-    # sample rate (MHz), number of samples - 2 to compute linear regression
-    synchronizer = CFS2(sampleRate, nbOfSamples)
-    # estimate frequency and phase offset
-    idealUnwrappedPhase = np.unwrap(np.angle(myPacket.IQ))
-    receivedUnwrappedPhase = np.unwrap(np.angle(receivedSignal))
-    phaseDifference = receivedUnwrappedPhase - idealUnwrappedPhase
-    freqOffsetEstimated, phaseOffsetEstimated = synchronizer.estimateFrequencyAndPhaseIterative(phaseDifference)
-    correctionVector = synchronizer.generatePhaseVector(freqOffsetEstimated, phaseOffsetEstimated)
-    # correct received signal
-    preCorrectedSignal = synchronizer.compensatePhase(correctionVector, receivedSignal)
-    print freqOffsetEstimated[-1], phaseOffsetEstimated[-1]
 
-    # correct remaining phase error
+    accErrorVector = np.zeros(8)
+    nbOfSimulations = 30
+    for i in range(1,9):
+        for j in range(nbOfSimulations):
+            nbOfSamples = i * 128
+            # sample rate (MHz), number of samples - 2 to compute linear regression
+            synchronizer = CFS2(sampleRate, nbOfSamples)
+            # estimate frequency and phase offset
+            idealUnwrappedPhase = np.unwrap(np.angle(myPacket.IQ))
+            receivedUnwrappedPhase = np.unwrap(np.angle(receivedSignal))
+            phaseDifference = receivedUnwrappedPhase - idealUnwrappedPhase
+            freqOffsetEstimated, phaseOffsetEstimated = synchronizer.estimateFrequencyAndPhaseIterative(phaseDifference)
+            correctionVector = synchronizer.generatePhaseVector(freqOffsetEstimated, phaseOffsetEstimated)
+            # correct received signal
+            preCorrectedSignal = synchronizer.compensatePhase(correctionVector, receivedSignal)
 
 
+            accErrorVector[i-1] += utils.calcAverageError(myPacket.IQ[6:N - 2:4], preCorrectedSignal[6:N - 2:4]) / nbOfSimulations
 
-    # constellation plot: O-QPSK
-    receivedConstellation, = plt.plot(preCorrectedSignal.real[6:N - 2:4], preCorrectedSignal.imag[6:N - 2:4], 'rx')
-    idealConstellation, = plt.plot(myPacket.I[6:N - 2:4], myPacket.Q[6:N - 2:4], 'bo')
-    plt.axvline(x=0)
-    plt.axhline(y=0)
-    plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
-    receivedConstellation.set_linewidth(0.1)
-    plt.ylim(-2, 2)
-    plt.xlim(-2, 2)
-    plt.title("O-QPSK CONSTELLATION - IDEAL VS CORRECTED")
+    # normalize result
+    accErrorVector = accErrorVector / accErrorVector[0]
+    plt.plot(128 * np.arange(1,9),accErrorVector, '--bo')
     plt.show()

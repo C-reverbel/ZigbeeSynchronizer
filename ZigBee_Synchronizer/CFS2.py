@@ -29,8 +29,8 @@ class CFS2:
             sumXY += time[i] * phaseDifference[i]
             sumXX += time[i] * time[i]
             if i >= self.estimatorBufferSize:
-                freq[i] = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)
-                phase[i] = (sumY - freq[i] * sumX) / (n)
+                freq[i] = np.nan_to_num((n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX))
+                phase[i] = np.nan_to_num((sumY - freq[i] * sumX) / n)
         # correct received signal
         for i in range(self.estimatorBufferSize):
             freq[i] = freq[self.estimatorBufferSize]
@@ -42,7 +42,7 @@ class CFS2:
         for i in range(N):
             freq[i] = freq[i] / (2 * np.pi)
             phase[i] = phase[i] * 180 / np.pi
-        # freuency in Hz, phase in degrees
+        # frequency in Hz, phase in degrees
         return freq, phase
     # generate vector to be applied on compensatePhase()
     def generatePhaseVector(self, freqVect, phaseVect):
