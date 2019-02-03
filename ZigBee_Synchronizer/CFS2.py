@@ -42,6 +42,9 @@ class CFS2:
         for i in range(N):
             freq[i] = freq[i] / (2 * np.pi)
             phase[i] = phase[i] * 180 / np.pi
+        # if abs(phase error) > 360, subtract 360 from it
+        for i in range(N):
+            phase[i] = phase[i] % 360
         # frequency in Hz, phase in degrees
         return freq, phase
     # generate vector to be applied on compensatePhase()
@@ -67,7 +70,7 @@ class CFS2:
 
 if __name__ == "__main__":
     # preamble lasts 1024 samples
-    nbOfSamples = 1024
+    nbOfSamples = 132
     sampleRate = 8
     freqOffset = 500e3
     phaseOffset = 15
@@ -119,7 +122,7 @@ if __name__ == "__main__":
     unwrapped, = plt.plot(timeUs[:nbOfSamplesToPlot], idealUnwrappedPhase[:nbOfSamplesToPlot], '-r')
     plt.legend([wrapped, unwrapped], ['WRAPPED PHASE', 'UNWRAPPED PHASE'], loc=2)
     plt.grid(b=None, which='major', axis='both')
-    plt.title("TRANSMITTED PHASE")
+    plt.title("ZIGBEE PREAMBLE S0 SYMBOL PHASE")
     plt.ylabel("phase (rad)")
     plt.xlabel("time (us)")
     plt.xticks(np.arange(0,nbOfSamplesToPlot / sampleRate + 0.5,0.5))

@@ -33,31 +33,49 @@ if __name__ == "__main__":
     # payload in bytes, sample-rate in MHz
     myPacket = ZigBeePacket(zigbeePayloadNbOfBytes, sampleRate)
     N = myPacket.I.__len__()
-    # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
-    myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
-    # receive signal and filter it (change filter order to ZERO to disable filtering)
-    receivedSignal = np.roll(utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ), cutoff, fs, order),0)
 
-    accErrorVector = np.zeros(8)
-    nbOfSimulations = 30
+    accFreqErrorVector = np.zeros(8)
+    accPhaseErrorVector = np.zeros(8)
+    nbOfSimulations = 10
     for i in range(1,9):
         for j in range(nbOfSimulations):
+            # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
+            myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
+            # receive signal and filter it (change filter order to ZERO to disable filtering)
+            receivedSignal = np.roll(utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ), cutoff, fs, order), 0)
+            ##receivedSignal = np.roll(receivedSignal, -2)
+            # number of samples used to estimate frequency and phase
             nbOfSamples = i * 128
             # sample rate (MHz), number of samples - 2 to compute linear regression
             synchronizer = CFS2(sampleRate, nbOfSamples)
             # estimate frequency and phase offset
-            idealUnwrappedPhase = np.unwrap(np.angle(myPacket.IQ))
-            receivedUnwrappedPhase = np.unwrap(np.angle(receivedSignal))
-            phaseDifference = receivedUnwrappedPhase - idealUnwrappedPhase
+            phaseDifference = np.unwrap(np.angle(receivedSignal)) - np.unwrap(np.angle(myPacket.IQ))
             freqOffsetEstimated, phaseOffsetEstimated = synchronizer.estimateFrequencyAndPhaseIterative(phaseDifference)
-            correctionVector = synchronizer.generatePhaseVector(freqOffsetEstimated, phaseOffsetEstimated)
-            # correct received signal
-            preCorrectedSignal = synchronizer.compensatePhase(correctionVector, receivedSignal)
+            #print freqOffsetEstimated[-1] - freqOffset, phaseOffsetEstimated[-1] - phaseOffset
+            # compute phase and frequency error
+            accFreqErrorVector[i-1]  += abs(freqOffsetEstimated[-1] - freqOffset)   / nbOfSimulations
+            accPhaseErrorVector[i-1] += abs(phaseOffsetEstimated[-1] - phaseOffset) / nbOfSimulations
 
+    # plot frequency and phase error
+    print "freq error = ", accFreqErrorVector
+    print "phase error = ", accPhaseErrorVector
+    plt.subplot(211)
+    plt.plot(128 * np.arange(1,9), accFreqErrorVector, '--ro')
+    plt.xticks(range(128,1025,128))
+    plt.title("Frequency estimation error vs number of samples - SNR = " + str(SNR) + " dB")
+    plt.ylabel("Frequency error (Hz)")
+    plt.ylim(-0.1, 750)
+    plt.grid(b=None, which='major', axis='x')
+    plt.axhline(y=0)
 
-            accErrorVector[i-1] += utils.calcAverageError(myPacket.IQ[6:N - 2:4], preCorrectedSignal[6:N - 2:4]) / nbOfSimulations
+    plt.subplot(212)
+    plt.plot(128 * np.arange(1, 9), accPhaseErrorVector, '--bo')
+    plt.xticks(range(128, 1025, 128))
+    plt.title("Phase estimation error vs number of samples - SNR = " + str(SNR) + " dB")
+    plt.ylabel("Phase error (degrees)")
+    plt.xlabel("number of samples")
+    plt.ylim(-0.1, 4)
+    plt.grid(b=None, which='major', axis='x')
+    plt.axhline(y=0)
 
-    # normalize result
-    accErrorVector = accErrorVector / accErrorVector[0]
-    plt.plot(128 * np.arange(1,9),accErrorVector, '--bo')
     plt.show()

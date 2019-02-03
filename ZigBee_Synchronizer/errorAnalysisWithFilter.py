@@ -16,8 +16,8 @@ if __name__ == "__main__":
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
     freqOffset = 200e3
-    phaseOffset = 10
-    SNR = 8
+    phaseOffset = 50
+    SNR = 10
 
     print "Zigbee payload size = " + str(zigbeePayloadNbOfBytes) + " bytes"
     print "Sample rate = " + str(sampleRate) + " MHz"
@@ -27,14 +27,14 @@ if __name__ == "__main__":
     print "\n"
 
     accErrorsArray = []
-    for k in range(20):
+    for k in range(30):
         # Filter requirements.
         order = k
         fs = 8e6  # sample rate, Hz
         cutoff = 2e6  # desired cutoff frequency of the filter, Hz
 
         accumulatedError = 0
-        nbOfIterations = 60
+        nbOfIterations = 100
 
         for i in range(nbOfIterations):
             # payload in bytes, sample-rate in MHz
