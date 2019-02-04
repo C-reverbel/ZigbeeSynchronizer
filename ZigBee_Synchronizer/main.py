@@ -6,18 +6,19 @@
 from ZigBeePacket import ZigBeePacket
 from WirelessChannel import WirelessChannel
 from CFS2 import CFS2
+from CPS import CPS
 import utils
 import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # Zigbee packet
-    nbOfSamples = 1024
+    nbOfSamples = 128
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
-    freqOffset = 500e3
-    phaseOffset = 30
-    SNR = 10
+    freqOffset = 200e3
+    phaseOffset = 50
+    SNR = 15
     # Butterworth low-pass filter
     cutoff = 2.5e6
     fs = sampleRate * 1e6
@@ -33,10 +34,14 @@ if __name__ == "__main__":
     # payload in bytes, sample-rate in MHz
     myPacket = ZigBeePacket(zigbeePayloadNbOfBytes, sampleRate)
     N = myPacket.I.__len__()
+
+    ## CHANNEL
     # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
     # receive signal and filter it (change filter order to ZERO to disable filtering)
-    receivedSignal = np.roll(utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ), cutoff, fs, order),0)
+    receivedSignal = utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ), cutoff, fs, order)
+
+    ## CFS
     # sample rate (MHz), number of samples - 2 to compute linear regression
     synchronizer = CFS2(sampleRate, nbOfSamples)
     # estimate frequency and phase offset
@@ -47,15 +52,43 @@ if __name__ == "__main__":
     correctionVector = synchronizer.generatePhaseVector(freqOffsetEstimated, phaseOffsetEstimated)
     # correct received signal
     preCorrectedSignal = synchronizer.compensatePhase(correctionVector, receivedSignal)
-    print freqOffsetEstimated[-1], phaseOffsetEstimated[-1]
 
-    # correct remaining phase error
+    ## CPS
+    # convert preCorrected signal from OQPSK to QPSK
+    preCorrectedSignal.imag = np.roll(preCorrectedSignal.imag,-4)
+    # creates CPS Synchronizer
+    synchronizer2 = CPS(8)
+    # loop-filter cutoff frequency (Hz), signal to correct
+    correctedSignal, phaseCPS = synchronizer2.costasLoop(10000, preCorrectedSignal)
 
 
+    ## PLOT
+    print "CFS estimated frequency and phase offset"
+    print "Frequency = " + str(freqOffsetEstimated[-1])
+    print "Phase = " + str(phaseOffsetEstimated[-1])
+    print "Frequency Error = " + str(freqOffsetEstimated[-1] - freqOffset)
+    print "Phase Error = " + str(phaseOffsetEstimated[-1] - phaseOffset)
+    # time vector
+    maxTime = (1e-6 / sampleRate) * N
+    timeStep = 1e-6 / sampleRate
+    time = np.arange(0, maxTime, timeStep)
 
-    # constellation plot: O-QPSK
-    receivedConstellation, = plt.plot(preCorrectedSignal.real[6:N - 2:4], preCorrectedSignal.imag[6:N - 2:4], 'rx')
-    idealConstellation, = plt.plot(myPacket.I[6:N - 2:4], myPacket.Q[6:N - 2:4], 'bo')
+    # # phase estimation
+    # totalPhase = (time * freqOffsetEstimated * 2 * np.pi + phaseOffsetEstimated * np.pi / 180) + phaseCPS
+    # plt.plot(time[:100], totalPhase[:100])
+    # plt.show()
+
+    plt.plot(phaseCPS * 180 / np.pi)
+    plt.show()
+
+    # ideal received signal, no freq or phase offset
+    myNoisyChannel = WirelessChannel(sampleRate, 0, 0, SNR)
+    idealReceivedSignal = utils.butter_lowpass_filter(myNoisyChannel.receive(myPacket.IQ), cutoff, fs, order)
+    idealReceivedSignal.imag = np.roll(idealReceivedSignal.imag, -4)
+
+    # constellation plot: QPSK
+    receivedConstellation, = plt.plot(correctedSignal.real[4::8], correctedSignal.imag[4::8], 'rx')
+    idealConstellation, = plt.plot(idealReceivedSignal.real[4::8], idealReceivedSignal.imag[4::8], 'bo')
     plt.axvline(x=0)
     plt.axhline(y=0)
     plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)

@@ -42,17 +42,16 @@ class CPS:
             # rotate point
             temp[i] = self.compensatePhase(phase, temp[i])
             # compute phase error
-            signI = np.sign(temp.real[i])#myPacket.I[i]#np.sign(temp.real[i])
-            signQ = np.sign(temp.imag[i])#myPacket.Q[i]#
-            deltaPhi = temp.real[i] * signQ - temp.imag[i] * signI
+            signI = np.sign(temp.real[i])
+            signQ = np.sign(temp.imag[i])
+            deltaPhi = -temp.real[i] * signQ + temp.imag[i] * signI
             # loop filter
             last, last_old, deltaPhi_old = self._iterativeLowPassFilter(freq, last, last_old, deltaPhi, deltaPhi_old)
 
-            phase += 0.01*last
-            phaseVect[i] = phase
-            phaseErrVector[i] = deltaPhi
-        #temp = self.compensatePhase(phase * np.ones(N), temp)
-        return temp, phaseVect, phaseErrVector
+            # constant value empirically tested :p
+            phase += 0.005*last
+            phaseVect[i] = phase # return phase for test only
+        return temp, phaseVect
 
     def _iterativeLowPassFilter(self, cutoffFrequency, y, y_old, x, x_old):
         C1, C2 = self._computeFilterParameters(cutoffFrequency, self.sampleRate)
@@ -73,16 +72,15 @@ class CPS:
 
 if __name__ == "__main__":
     # Zigbee packet
-    nbOfSamples = 1024
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
-    freqOffset = 300
-    phaseOffset = 5
+    freqOffset = 250
+    phaseOffset = 20
     SNR = 10
     # Butterworth low-pass filter
-    cutoff = 1.5e6
+    cutoff = 2e6
     fs = sampleRate * 1e6
-    order = 4
+    order = 0
 
     print "Zigbee payload size = " + str(zigbeePayloadNbOfBytes) + " bytes"
     print "Sample rate = " + str(sampleRate) + " MHz"
@@ -95,14 +93,17 @@ if __name__ == "__main__":
     myPacket = ZigBeePacket(zigbeePayloadNbOfBytes, sampleRate)
     N = myPacket.I.__len__()
 
+    myPacket.IQ.imag = np.roll(myPacket.IQ.imag,-4)
+
     # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
     # receive signal and filter it (change filter order to ZERO to disable filtering)
     receivedSignal = np.roll(utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ), cutoff, fs, order), 0)
+
     # Instantiate CPS
     # sample rate (MHz)
     synchronizer = CPS(sampleRate)
-    correctedSignal, phaseVector, phaseErrVector = synchronizer.costasLoop(100000, receivedSignal)
+    correctedSignal, phaseVector = synchronizer.costasLoop(10000, receivedSignal)
 
     # define ideal noisy signal (no freq or phase offset)
     channel2 = WirelessChannel(sampleRate, 0, 0, SNR)
@@ -118,10 +119,22 @@ if __name__ == "__main__":
 
     print err_received / err_received, err_corrected / err_received
 
-    offset = 25000
+    offset = 0
 
-    rec, = plt.plot(receivedSignal.real[offset:offset+100], 'g')
+    rec, = plt.plot(receivedSignal.imag[offset:offset+100], 'g')
     rec.set_linewidth(0.5)
-    plt.plot(correctedSignal.real[offset:offset+100], 'r')
-    plt.plot(idealRecSignal.real[offset:offset+100], 'b--')
+    plt.plot(correctedSignal.imag[offset:offset+100], 'r')
+    plt.plot(idealRecSignal.imag[offset:offset+100], 'b--')
+    plt.show()
+
+    # constellation plot: QPSK
+    receivedConstellation, = plt.plot(correctedSignal.real[4::8], correctedSignal.imag[4::8], 'rx')
+    idealConstellation, = plt.plot(idealRecSignal.real[4::8], idealRecSignal.imag[4::8], 'bo')
+    plt.axvline(x=0)
+    plt.axhline(y=0)
+    plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
+    receivedConstellation.set_linewidth(0.1)
+    plt.ylim(-2, 2)
+    plt.xlim(-2, 2)
+    plt.title("O-QPSK CONSTELLATION - IDEAL VS CORRECTED")
     plt.show()
