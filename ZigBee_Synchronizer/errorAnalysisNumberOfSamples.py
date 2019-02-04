@@ -15,7 +15,7 @@ if __name__ == "__main__":
     nbOfSamples = 128
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
-    freqOffset = 500e3
+    freqOffset = 200e3
     phaseOffset = 30
     SNR = 10
     # Butterworth low-pass filter
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     accFreqErrorVector = np.zeros(8)
     accPhaseErrorVector = np.zeros(8)
-    nbOfSimulations = 10
+    nbOfSimulations = 20
     for i in range(1,9):
         for j in range(nbOfSimulations):
             # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
