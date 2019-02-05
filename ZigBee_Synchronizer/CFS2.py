@@ -4,11 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class CFS2:
-    def __init__(self, sampleRate, nbOfSamples):
+    def __init__(self, sampleRate, nbOfSamples, samplesOffset):
         self.sampleRate = sampleRate
         self.nbOfSamples = nbOfSamples
         self.estimatorBufferSize = 1
-        self.samplesOffset = 4
+        self.samplesOffset = samplesOffset#4
 
     def estimateFrequencyAndPhaseIterative(self, phaseDifference):
         N = phaseDifference.__len__()

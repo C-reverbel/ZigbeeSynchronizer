@@ -5,22 +5,6 @@ import utils
 import numpy as np
 import matplotlib.pyplot as plt
 
-class CPS2:
-    def __init__(self, sampleRate):
-        self.sampleRate = sampleRate
-
-    def rootMeanSquare(self, vector):
-        temp = vector.copy()
-        N = vector.__len__()
-        f_acc = 0
-        for k in range(N):
-            Wk = self._computeWk(N / 8, k)
-            f_acc += Wk * np.angle(temp[k])
-        return (1e6 / (2 * np.pi)) * f_acc
-
-    def _computeWk(self, L0, k):
-        return 6 * (2 * k - 8 * L0 + 1) / (8 * L0 * (64 * L0 * L0 - 1))
-
 class CPS:
     def __init__(self, sampleRate):
         self.sampleRate = sampleRate
@@ -31,25 +15,35 @@ class CPS:
         temp = vector.copy()
         C1, C2 = self._computeFilterParameters(freq, self.sampleRate)
         N = vector.__len__()
-
         phaseVect = np.zeros(N)
-        phaseErrVector = np.zeros(N)
-
         phase = 0
+
         # loop filter variables
         last, last_old, deltaPhi_old = 0, 0, 0
+        # I and Q filter variables
+        y_i, y_i_old, x_i_old = 0, 0, 0
+        y_q, y_q_old, x_q_old = 0, 0, 0
         for i in range(N):
             # rotate point
             temp[i] = self.compensatePhase(phase, temp[i])
+
+            y_i = temp.real[i]
+            y_q = temp.imag[i]
+
+            # filter I and Q components
+            ##y_i, y_i_old, x_i_old = self._iterativeLowPassFilter(100, y_i, y_i_old, temp.real[i], x_i_old)
+            ##y_q, y_q_old, x_q_old = self._iterativeLowPassFilter(100, y_q, y_q_old, temp.imag[i], x_q_old)
+
             # compute phase error
-            signI = np.sign(temp.real[i])
-            signQ = np.sign(temp.imag[i])
-            deltaPhi = -temp.real[i] * signQ + temp.imag[i] * signI
+            signI = np.sign(y_i)
+            signQ = np.sign(y_q)
+            deltaPhi = y_i * signQ - y_q * signI
+            deltaPhi = y_i * y_q
             # loop filter
             last, last_old, deltaPhi_old = self._iterativeLowPassFilter(freq, last, last_old, deltaPhi, deltaPhi_old)
 
             # constant value empirically tested :p
-            phase += 0.005*last
+            phase = 0.0005 * last **2
             phaseVect[i] = phase # return phase for test only
         return temp, phaseVect
 
@@ -68,15 +62,15 @@ class CPS:
         return C1, C2
 
     def compensatePhase(self, phase, signal):
-        return np.exp(-1j * phase) * signal
+        return np.exp(1j * phase) * signal
 
 if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
-    freqOffset = 250
-    phaseOffset = 20
-    SNR = 10
+    freqOffset = 0
+    phaseOffset = 10
+    SNR = 1000
     # Butterworth low-pass filter
     cutoff = 2e6
     fs = sampleRate * 1e6
@@ -100,16 +94,20 @@ if __name__ == "__main__":
     # receive signal and filter it (change filter order to ZERO to disable filtering)
     receivedSignal = np.roll(utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ), cutoff, fs, order), 0)
 
+    ###receivedSignal.imag = np.roll(receivedSignal.imag,-4)
     # Instantiate CPS
     # sample rate (MHz)
     synchronizer = CPS(sampleRate)
-    correctedSignal, phaseVector = synchronizer.costasLoop(10000, receivedSignal)
+    correctedSignal, phaseVector = synchronizer.costasLoop(50000000, receivedSignal)
 
     # define ideal noisy signal (no freq or phase offset)
     channel2 = WirelessChannel(sampleRate, 0, 0, SNR)
     idealRecSignal = np.roll(utils.butter_lowpass_filter(channel2.receive(myPacket.IQ), cutoff, fs, order), 0)
 
     ## PLOT
+    #correctedSignal.imag = np.roll(correctedSignal.imag, -4)
+    #idealRecSignal.imag = np.roll(idealRecSignal.imag, -4)
+
     plt.plot(phaseVector * 180 / np.pi)
     plt.grid(b=None, which='major', axis='both')
     plt.show()

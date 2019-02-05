@@ -106,3 +106,12 @@ if __name__ == "__main__":
     plt.ylabel("voltage")
     plt.xlabel("samples")
     plt.show()
+
+    #inphase, = plt.plot(myPacket.IQ.real[:100], '--r')
+    #quadrature, = plt.plot(myPacket.IQ.imag[:100], '--b')
+    ##mixSquare, = plt.plot(0.5 * (myPacket.IQ.real[:100]**2 - myPacket.IQ.imag[:100]**2), '--go')
+    ##mix, = plt.plot(myPacket.IQ.real[:100] * myPacket.IQ.imag[:100], '--ko')
+    #mult, = plt.plot(0.5 * (myPacket.IQ.real[:100]**2 - myPacket.IQ.imag[:100]**2) + myPacket.IQ.real[:100] * myPacket.IQ.imag[:100], '--ko')
+    #inphase.set_linewidth(0.5)
+    #quadrature.set_linewidth(0.5)
+    #plt.show()
