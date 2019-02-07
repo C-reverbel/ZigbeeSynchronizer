@@ -6,6 +6,7 @@
 from ZigBeePacket import ZigBeePacket
 from WirelessChannel import WirelessChannel
 from CFS2 import CFS2
+from CFS import CFS
 from CPS import CPS
 import utils
 import numpy as np
@@ -17,7 +18,7 @@ if __name__ == "__main__":
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
     freqOffset = 200e3
-    phaseOffset = 10
+    phaseOffset = 200
     SNR = 10.
     # Butterworth low-pass filter
     cutoff = 2e6
@@ -64,31 +65,33 @@ if __name__ == "__main__":
 
     ## CPS
     synchronizer2 = CPS(sampleRate)
-    correctedSignal, phaseVector = synchronizer2.costasLoop(100000, preCorrectedSignal)
+    correctedSignal, phaseVector = synchronizer2.costasLoop(5000, preCorrectedSignal)
 
 
 
 
-    ## PLOT
+    ################################################### PLOT
     # time vector
     maxTime = (1e-6 / sampleRate) * N
     timeStep = 1e-6 / sampleRate
     time = np.arange(0, maxTime, timeStep)
 
+    # ideal received signal, no freq or phase offset
+    sync = CFS(sampleRate, nbOfSamples)
+    idealReceivedSignal = sync.compensateFrequencyAndPhase(freqOffset, phaseOffset, myChannel.receive(myPacket.IQ))
+
     plt.subplot(211)
     plt.plot(1e6*time, phaseDifference)
     plt.subplot(212)
-    phaseDifference = np.unwrap(np.angle(preCorrectedSignal)) - np.unwrap(np.angle(myPacket.IQ))
+    phaseDifference = utils.butter_lowpass_filter(np.unwrap(np.angle(preCorrectedSignal)) - np.unwrap(np.angle(myPacket.IQ)), 5000, sampleRate*1e6, 2)
     plt.plot(1e6*time, phaseDifference, 'r')
 
-    phaseDifference = np.unwrap(np.angle(correctedSignal)) - np.unwrap(np.angle(myPacket.IQ))
+    phaseDifference = utils.butter_lowpass_filter(np.unwrap(np.angle(correctedSignal)) - np.unwrap(np.angle(myPacket.IQ)), 5000, sampleRate*1e6, 2)
     plt.plot(1e6*time, phaseDifference, 'b')
     plt.show()
 
 
-    # ideal received signal, no freq or phase offset
-    myNoisyChannel = WirelessChannel(sampleRate, 0, 0, SNR)
-    idealReceivedSignal = utils.butter_lowpass_filter(myNoisyChannel.receive(myPacket.IQ), cutoff, fs, order)
+
 
     idealReceivedSignal.imag = np.roll(idealReceivedSignal.imag, -4)
     correctedSignal.imag = np.roll(correctedSignal.imag, -4)
