@@ -82,7 +82,7 @@ class ZigBeePacket:
 
     def halfSineShaping(self, message, simulationFrequency):
         x = np.arange(message.__len__())
-        halfSine = np.ones(x.__len__())#np.abs(np.sin(np.pi * x / simulationFrequency))##np.abs(np.sin(np.pi * x / simulationFrequency))
+        halfSine = np.abs(np.sin(np.pi * x / simulationFrequency))#
         messageInt = map(int, message)
         result = halfSine * messageInt
         return result
