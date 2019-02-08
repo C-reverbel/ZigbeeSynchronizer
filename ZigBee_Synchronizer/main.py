@@ -85,7 +85,7 @@ if __name__ == "__main__":
     phaseNoiseCFS, = plt.plot(1e3*time, phaseDifference, 'orange')
     phaseDifference = utils.butter_lowpass_filter(phaseDifference, 5000, sampleRate*1e6, 2)
     phaseCFS, = plt.plot(1e3 * time, phaseDifference, 'r--')
-    plt.yticks(np.arange(min(phaseDifference)-2 * np.pi, max(phaseDifference) + np.pi / 2, np.pi / 2))
+    plt.yticks(np.arange(-2 * np.pi, max(phaseDifference) + np.pi / 2, np.pi / 2))
     phaseDifference = np.unwrap(np.angle(correctedSignal)) - np.unwrap(np.angle(myPacket.IQ))
     phaseNoiseCPS, = plt.plot(1e3 * time, phaseDifference, 'b')
     phaseDifference = utils.butter_lowpass_filter(phaseDifference, 5000, sampleRate*1e6, 2)
