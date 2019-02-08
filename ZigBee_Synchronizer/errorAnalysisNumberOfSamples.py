@@ -17,7 +17,7 @@ if __name__ == "__main__":
     zigbeePayloadNbOfBytes = 127
     freqOffset = 200e3
     phaseOffset = 30
-    SNR = 10
+    SNR = 10.
     # Butterworth low-pass filter
     cutoff = 2.5e6
     fs = sampleRate * 1e6
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     accFreqErrorVector = np.zeros(8)
     accPhaseErrorVector = np.zeros(8)
-    nbOfSimulations = 20
+    nbOfSimulations = 100
     for i in range(1,9):
         for j in range(nbOfSimulations):
             # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
@@ -64,8 +64,9 @@ if __name__ == "__main__":
     plt.xticks(range(128,1025,128))
     plt.title("Frequency estimation error vs number of samples - SNR = " + str(SNR) + " dB")
     plt.ylabel("Frequency error (Hz)")
-    plt.ylim(-0.1, 750)
-    plt.grid(b=None, which='major', axis='x')
+    plt.ylim(0, 750)
+    plt.yticks(np.arange(0,1000,100))
+    plt.grid(b=None, which='major', axis='both')
     plt.axhline(y=0)
 
     plt.subplot(212)
@@ -74,8 +75,8 @@ if __name__ == "__main__":
     plt.title("Phase estimation error vs number of samples - SNR = " + str(SNR) + " dB")
     plt.ylabel("Phase error (degrees)")
     plt.xlabel("number of samples")
-    plt.ylim(-0.1, 4)
-    plt.grid(b=None, which='major', axis='x')
+    plt.ylim(0, 4)
+    plt.grid(b=None, which='major', axis='both')
     plt.axhline(y=0)
 
     plt.show()

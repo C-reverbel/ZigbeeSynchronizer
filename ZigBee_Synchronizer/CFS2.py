@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class CFS2:
-    def __init__(self, sampleRate, nbOfSamples, samplesOffset):
+    def __init__(self, sampleRate, nbOfSamples, samplesOffset = 4):
         self.sampleRate = sampleRate
         self.nbOfSamples = nbOfSamples
         self.estimatorBufferSize = 1
