@@ -70,10 +70,10 @@ class CFS2:
 
 if __name__ == "__main__":
     # preamble lasts 1024 samples
-    nbOfSamples = 132
+    nbOfSamples = 256
     sampleRate = 8
-    freqOffset = 500e3
-    phaseOffset = 15
+    freqOffset = 200e3
+    phaseOffset = 30
     SNR = 10
 
     # 2 bytes payload, 8 MHz sample-rate
@@ -81,6 +81,13 @@ if __name__ == "__main__":
     # sample rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
     receivedMessage = myChannel.receive(myPacket.IQ)
+
+    # adds an offset to the received signal
+    off = 0
+    receivedMessage = np.roll(receivedMessage,off)
+    receivedMessage[:off] = np.zeros(off) + 1j*np.zeros(off)
+    plt.plot(receivedMessage.real[:20])
+    plt.show()
 
     # ideal and received phases
     idealUnwrappedPhase = np.unwrap(np.angle(myPacket.IQ))
