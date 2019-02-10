@@ -39,11 +39,12 @@ class CPS:
 
     def _iterativeLowPassFilter(self, cutoffFrequency, y, y_old, x, x_old):
         C1, C2 = self._computeFilterParameters(cutoffFrequency, self.sampleRate)
+        # TEST
+        C1, C2 = 0.5, 0.25
         y = (C1 * y_old + C2 * (x + x_old))
         x_old = x
         y_old = y
         return y, y_old, x_old
-
     def _computeFilterParameters(self, freq, sampleRate):
         Wc = 2 * np.pi * freq
         Ts = 1e-6 / sampleRate

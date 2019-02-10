@@ -14,12 +14,12 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # Zigbee packet
-    nbOfSamples = 256
+    nbOfSamples = 128
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
     freqOffset = 200e3
     phaseOffset = 40
-    SNR = 8.
+    SNR = 10.
     # Butterworth low-pass filter
     cutoff = 3e6
     fs = sampleRate * 1e6
@@ -148,4 +148,4 @@ if __name__ == "__main__":
     plt.show()
 
     #todo - USE THIS TO ESTIMATE NEXT POWER OF 2
-    print synchronizer2._computeFilterParameters(100000, 8)
+    print synchronizer2._computeFilterParameters(850000, 8)
