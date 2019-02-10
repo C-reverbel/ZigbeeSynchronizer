@@ -18,10 +18,10 @@ if __name__ == "__main__":
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
     freqOffset = 200e3
-    phaseOffset = 200
-    SNR = 10.
+    phaseOffset = 40
+    SNR = 8.
     # Butterworth low-pass filter
-    cutoff = 2e6
+    cutoff = 3e6
     fs = sampleRate * 1e6
     order = 0
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     ## CPS
     synchronizer2 = CPS(sampleRate)
-    correctedSignal, phaseVector = synchronizer2.costasLoop(5000, preCorrectedSignal)
+    correctedSignal, phaseVector, sign = synchronizer2.costasLoop(100000, preCorrectedSignal)
 
 
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     phaseNoiseCPS.set_linewidth(0.1)
     phaseCFS.set_linewidth(4)
     phaseCPS.set_linewidth(4)
-    plt.legend([phaseCFS, phaseCPS], ['POST-CFS', 'POST-CPS'],loc=3)
+    plt.legend([phaseCFS, phaseCPS], ['POST-CFS', 'POST-CPS'], loc=3)
     plt.title("PHASE ERROR VS TIME - SNR: " + str(SNR) + ", CFS SAMPLES: " + str(nbOfSamples))
     plt.ylabel("PHASE (rad)")
     plt.xlabel("TIME (ms)")
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     preCorrectedSignal.imag = np.roll(preCorrectedSignal.imag, -4)
 
     # constellation plot: QPSK
-    receivedConstellation, = plt.plot(preCorrectedSignal.real[4::8], preCorrectedSignal.imag[4::8], 'gx')
+    receivedConstellation, = plt.plot(preCorrectedSignal.real[4::8], preCorrectedSignal.imag[4::8], 'x', color='orange')
     idealConstellation, = plt.plot(idealReceivedSignal.real[4::8], idealReceivedSignal.imag[4::8], 'bo')
     plt.axvline(x=0)
     plt.axhline(y=0)
@@ -129,13 +129,14 @@ if __name__ == "__main__":
     plt.show()
     # time domain plot
     offset = 30000
-    numberPoints = 50
+    numberPoints = 100
     samples = range(offset, offset + numberPoints)
     recTime, = plt.plot(samples, receivedSignal.real[offset:offset + numberPoints], 'g')
     preCorrTime, = plt.plot(samples, preCorrectedSignal.real[offset:offset + numberPoints], 'k')
     corrTime, = plt.plot(samples, correctedSignal.real[offset:offset + numberPoints], 'r')
     idealTime, = plt.plot(samples, idealReceivedSignal.real[offset:offset + numberPoints], 'b--')
     idealTimeNoNoise, = plt.plot(samples, myPacket.IQ.real[offset:offset + numberPoints], 'c--')
+    #signTime, = plt.plot(samples, sign.real[offset:offset + numberPoints], 'k--')
     recTime.set_linewidth(0.5)
     preCorrTime.set_linewidth(0.5)
     plt.legend([recTime, preCorrTime, corrTime, idealTime, idealTimeNoNoise], \
@@ -145,3 +146,6 @@ if __name__ == "__main__":
     plt.xlabel("samples")
     plt.axhline(y=0, color='k')
     plt.show()
+
+    #todo - USE THIS TO ESTIMATE NEXT POWER OF 2
+    print synchronizer2._computeFilterParameters(100000, 8)
