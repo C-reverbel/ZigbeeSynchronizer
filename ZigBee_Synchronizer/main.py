@@ -19,7 +19,7 @@ if __name__ == "__main__":
     zigbeePayloadNbOfBytes = 127
     freqOffset = 200e3
     phaseOffset = 40
-    SNR = 10.
+    SNR = 7.
     # Butterworth low-pass filter
     cutoff = 3e6
     fs = sampleRate * 1e6

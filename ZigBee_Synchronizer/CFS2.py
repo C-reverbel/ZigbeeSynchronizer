@@ -70,10 +70,10 @@ class CFS2:
 
 if __name__ == "__main__":
     # preamble lasts 1024 samples
-    nbOfSamples = 256
+    nbOfSamples = 132
     sampleRate = 8
     freqOffset = 200e3
-    phaseOffset = 30
+    phaseOffset = 300
     SNR = 10
 
     # 2 bytes payload, 8 MHz sample-rate

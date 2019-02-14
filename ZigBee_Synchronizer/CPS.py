@@ -19,13 +19,13 @@ class CPS:
 
         # loop filter variables
         last, last_old, deltaPhi_old = 0, 0, 0
-        for i in range(4,N):
+        for i in range(sampleRate/2,N):
             # rotate signal
             temp[i] = self.compensatePhase(phase, temp[i])
-            y_i = temp.real[i-4]
+            y_i = temp.real[i-sampleRate/2]
             y_q = temp.imag[i]
             # compute phase error
-            signI = np.sign(temp.real[i-4])
+            signI = np.sign(temp.real[i-sampleRate/2])
             signQ = np.sign(temp.imag[i])
             deltaPhi = y_q * signI - y_i * signQ
             # loop filter
@@ -40,7 +40,7 @@ class CPS:
     def _iterativeLowPassFilter(self, cutoffFrequency, y, y_old, x, x_old):
         C1, C2 = self._computeFilterParameters(cutoffFrequency, self.sampleRate)
         # TEST
-        C1, C2 = 0.5, 0.25
+        #C1, C2 = 0.5, 0.25 ## Fc = 850 kHz
         y = (C1 * y_old + C2 * (x + x_old))
         x_old = x
         y_old = y
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     # Instantiate CPS
     # sample rate (MHz)
     synchronizer = CPS(sampleRate)
-    correctedSignal, phaseVector, _ = synchronizer.costasLoop(100000, receivedSignal)
+    correctedSignal, phaseVector, _ = synchronizer.costasLoop(850000, receivedSignal)
 
     # define ideal noisy signal (no freq or phase offset)
     channel2 = WirelessChannel(sampleRate, 0, 0, SNR)
@@ -102,7 +102,9 @@ if __name__ == "__main__":
     #correctedSignal.imag = np.roll(correctedSignal.imag, 4)
     #idealRecSignal.imag = np.roll(idealRecSignal.imag, 4)
 
-    plt.plot(phaseVector[:500] * 180 / np.pi)
+    offset = 0
+    max = 500
+    plt.plot(phaseVector[offset:offset+max] * 180 / np.pi, '--b')
     plt.grid(b=None, which='major', axis='both')
     plt.show()
 
