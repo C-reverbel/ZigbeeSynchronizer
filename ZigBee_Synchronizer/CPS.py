@@ -19,13 +19,13 @@ class CPS:
 
         # loop filter variables
         last, last_old, deltaPhi_old = 0, 0, 0
-        for i in range(sampleRate/2,N):
+        for i in range(self.sampleRate/2,N):
             # rotate signal
             temp[i] = self.compensatePhase(phase, temp[i])
-            y_i = temp.real[i-sampleRate/2]
+            y_i = temp.real[i-self.sampleRate/2]
             y_q = temp.imag[i]
             # compute phase error
-            signI = np.sign(temp.real[i-sampleRate/2])
+            signI = np.sign(temp.real[i-self.sampleRate/2])
             signQ = np.sign(temp.imag[i])
             deltaPhi = y_q * signI - y_i * signQ
             # loop filter
@@ -59,9 +59,9 @@ if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
-    freqOffset = 0. # max 450 @ SNR = 10
+    freqOffset = 1000. # max 450 @ SNR = 10
     phaseOffset = 20. # max 25  @ SNR = 10
-    SNR = 10000.
+    SNR = 10.9
     # Butterworth low-pass filter
     cutoff = 2e6
     fs = sampleRate * 1e6
@@ -102,10 +102,15 @@ if __name__ == "__main__":
     #correctedSignal.imag = np.roll(correctedSignal.imag, 4)
     #idealRecSignal.imag = np.roll(idealRecSignal.imag, 4)
 
-    offset = 0
+    offset = 30000
     max = 500
-    plt.plot(phaseVector[offset:offset+max] * 180 / np.pi, '--b')
+    plt.axhline(y=phaseOffset, color='k')
+    phase, = plt.plot(phaseVector[offset:offset+max] * 180 / np.pi, '-b')
     plt.grid(b=None, which='major', axis='both')
+    plt.title("LOOP PERFORMANCE OF CPS - PHASE ERROR: " + str(phaseOffset) + " degrees")
+    plt.ylabel("PHASE (degrees)")
+    plt.xlabel("samples")
+    plt.xlim(offset, offset+max)
     plt.show()
 
     err_corrected = utils.calcAverageError(idealRecSignal, correctedSignal)
@@ -121,14 +126,38 @@ if __name__ == "__main__":
     plt.plot(idealRecSignal.real[offset:offset+100], 'b--')
     plt.show()
 
-    # constellation plot: QPSK
-    receivedConstellation, = plt.plot(correctedSignal.real[500:], correctedSignal.imag[500:], 'rx')
-    idealConstellation, = plt.plot(idealRecSignal.real, idealRecSignal.imag, 'bo')
-    plt.axvline(x=0)
-    plt.axhline(y=0)
-    plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
-    receivedConstellation.set_linewidth(0.1)
-    plt.ylim(-2, 2)
-    plt.xlim(-2, 2)
-    plt.title("O-QPSK CONSTELLATION - IDEAL VS CORRECTED")
+    ## constellation plot: QPSK
+    #idealRecSignal.imag = np.roll(idealRecSignal.imag, -4)
+    #correctedSignal.imag = np.roll(correctedSignal.imag, -4)
+    #
+    #receivedConstellation, = plt.plot(correctedSignal.real[10*4::8], correctedSignal.imag[10*4::8], 'rx')
+    #idealConstellation, = plt.plot(idealRecSignal.real[4::8], idealRecSignal.imag[4::8], 'bo')
+    #plt.axvline(x=0)
+    #plt.axhline(y=0)
+    #plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
+    #receivedConstellation.set_linewidth(0.1)
+    #plt.ylim(-2, 2)
+    #plt.xlim(-2, 2)
+    #plt.title("O-QPSK CONSTELLATION - IDEAL VS CORRECTED")
+    #plt.show()
+
+    # plot phase differences
+    phaseDifference = np.unwrap(np.angle(receivedSignal)) - np.unwrap(np.angle(myPacket.IQ))
+    phaseNoiseCFS, = plt.plot(1e3 * time, phaseDifference, 'orange')
+    phaseDifference = utils.butter_lowpass_filter(phaseDifference, 5000, sampleRate * 1e6, 2)
+    phaseCFS, = plt.plot(1e3 * time, phaseDifference, 'r--')
+    plt.yticks(np.arange(-2 * np.pi, max(phaseDifference) + np.pi / 2, np.pi / 2))
+    phaseDifference = np.unwrap(np.angle(correctedSignal)) - np.unwrap(np.angle(myPacket.IQ))
+    phaseNoiseCPS, = plt.plot(1e3 * time, phaseDifference, 'b')
+    phaseDifference = utils.butter_lowpass_filter(phaseDifference, 5000, sampleRate * 1e6, 2)
+    phaseCPS, = plt.plot(1e3 * time, phaseDifference, 'c--')
+    phaseNoiseCFS.set_linewidth(0.1)
+    phaseNoiseCPS.set_linewidth(0.1)
+    phaseCFS.set_linewidth(4)
+    phaseCPS.set_linewidth(4)
+    plt.legend([phaseCFS, phaseCPS], ['POST-CFS', 'POST-CPS'], loc=3)
+    plt.title("PHASE ERROR VS TIME - SNR: " + str(SNR) + ", CFS SAMPLES: " + str(nbOfSamples))
+    plt.ylabel("PHASE (rad)")
+    plt.xlabel("TIME (ms)")
+    plt.grid(b=None, which='major', axis='both')
     plt.show()

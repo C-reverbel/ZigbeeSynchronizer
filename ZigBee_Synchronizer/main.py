@@ -14,12 +14,12 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # Zigbee packet
-    nbOfSamples = 128
+    nbOfSamples = 256
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
     freqOffset = 200e3
-    phaseOffset = 40
-    SNR = 7.
+    phaseOffset = 40.
+    SNR = 10.
     # Butterworth low-pass filter
     cutoff = 3e6
     fs = sampleRate * 1e6
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     ## CPS
     synchronizer2 = CPS(sampleRate)
-    correctedSignal, phaseVector, sign = synchronizer2.costasLoop(100000, preCorrectedSignal)
+    correctedSignal, phaseVector, sign = synchronizer2.costasLoop(85000, preCorrectedSignal)
 
 
 
@@ -146,6 +146,3 @@ if __name__ == "__main__":
     plt.xlabel("samples")
     plt.axhline(y=0, color='k')
     plt.show()
-
-    #todo - USE THIS TO ESTIMATE NEXT POWER OF 2
-    print synchronizer2._computeFilterParameters(850000, 8)
