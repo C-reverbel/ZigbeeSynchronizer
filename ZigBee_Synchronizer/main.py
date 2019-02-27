@@ -65,12 +65,12 @@ if __name__ == "__main__":
 
     ## CPS
     synchronizer2 = CPS(sampleRate)
-    correctedSignal, phaseVector, sign = synchronizer2.costasLoop(85000, preCorrectedSignal)
+    correctedSignal, phaseVector, sign = synchronizer2.costasLoop(850000, preCorrectedSignal)
 
 
 
 
-    ################################################### PLOT
+
     # time vector
     maxTime = (1e-6 / sampleRate) * N
     timeStep = 1e-6 / sampleRate
@@ -79,6 +79,8 @@ if __name__ == "__main__":
     # ideal received signal, no freq or phase offset
     sync = CFS(sampleRate, nbOfSamples)
     idealReceivedSignal = sync.compensateFrequencyAndPhase(freqOffset, phaseOffset, myChannel.receive(myPacket.IQ))
+
+    ################################################### PLOT
 
     # plot phase differences
     phaseDifference = np.unwrap(np.angle(preCorrectedSignal)) - np.unwrap(np.angle(myPacket.IQ))
