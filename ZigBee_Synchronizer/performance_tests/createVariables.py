@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 nbOfSamples = 512
 sampleRate = 8
 zigbeePayloadNbOfBytes = 127
-freqOffset = 200e3
-phaseOffset = 100.
-SNR = 6.
+freqOffset = 200.e3
+phaseOffset = 250.
+SNR = 10.
 
 # Butterworth low-pass filter
 cutoff = 3e6

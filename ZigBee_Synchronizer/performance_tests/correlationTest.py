@@ -20,11 +20,12 @@ if __name__ == "__main__":
 
     # time domain plot
     offset = 30000
-    numberPoints = 100
+    numberPoints = 80
     samples = range(offset, offset + numberPoints)
-    corrTime, = plt.plot(samples, correctedSignal.real[offset:offset + numberPoints], 'k')
+    corrTime, = plt.plot(samples, correctedSignal.real[offset:offset + numberPoints], 'b')
+    corrTimeQ, = plt.plot(samples, correctedSignal.imag[offset:offset + numberPoints], 'r')
     idealTimeNoNoise, = plt.plot(samples, myPacket.IQ.real[offset:offset + numberPoints], 'c--')
-    idealTimeNoNoiseQ, = plt.plot(samples, myPacket.IQ.imag[offset:offset + numberPoints], 'r--')
+    idealTimeNoNoiseQ, = plt.plot(samples, myPacket.IQ.imag[offset:offset + numberPoints], '--', color='orange')
 
     plt.title("TIME DOMAIN IN-PHASE SIGNAL - SNR: " + str(SNR) + ", CFS SAMPLES: " + str(nbOfSamples))
     plt.ylabel("Amplitude (Volts)")
