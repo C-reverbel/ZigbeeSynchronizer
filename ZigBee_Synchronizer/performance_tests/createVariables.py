@@ -8,9 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Zigbee packet
-nbOfSamples = 512
+nbOfSamples = 256
 sampleRate = 8
-zigbeePayloadNbOfBytes = 127
+zigbeePayloadNbOfBytes = 20#127
 freqOffset = 200.e3
 phaseOffset = 250.
 SNR = 10.

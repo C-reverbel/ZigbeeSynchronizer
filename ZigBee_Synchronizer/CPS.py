@@ -60,7 +60,7 @@ if __name__ == "__main__":
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
     freqOffset = 500. # max 450 @ SNR = 10
-    phaseOffset = 50. # max 25  @ SNR = 10
+    phaseOffset = 70. # max 25  @ SNR = 10
     SNR = 10.
     # Butterworth low-pass filter
     cutoff = 2e6
@@ -100,6 +100,16 @@ if __name__ == "__main__":
     maxTime = (1e-6 / sampleRate) * N
     timeStep = 1e-6 / sampleRate
     time = np.arange(0, maxTime, timeStep)
+
+    instPhase = np.zeros(N)
+    instPhase[::] = 2 * np.pi * freqOffset * time[::] + phaseOffset * np.pi / 180
+
+    lim = 10000
+    ref, = plt.plot(time[:lim], instPhase[:lim], 'c--')
+    estimate, = plt.plot(time[:lim], phaseVector[:lim],'b')
+    ref.set_linewidth(4)
+    plt.show()
+
 
 
     err_corrected = utils.calcAverageError(idealRecSignal, correctedSignal)
