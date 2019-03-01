@@ -5,8 +5,6 @@
 #
 from ZigBeePacket import ZigBeePacket
 from WirelessChannel import WirelessChannel
-from CFS2 import CFS2
-from CFS import CFS
 from CPS import CPS
 import utils
 
@@ -16,12 +14,16 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # Zigbee packet
-    ##nbOfSamples = 256
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127  # 127
-    freqOffset = 0.
-    phaseOffset = 180.
-    SNR = 6.
+    freqOffset = 400.
+    phaseOffset = 20.
+    SNR = 6.95
+
+    # Butterworth low-pass filter
+    cutoff = 3.8e6
+    fs = sampleRate * 1e6
+    order = 0
 
     # payload in bytes, sample-rate in MHz
     myPacket = ZigBeePacket(zigbeePayloadNbOfBytes, sampleRate)
@@ -38,7 +40,7 @@ if __name__ == "__main__":
     # channel
     myChannel1 = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
     myChannel2 = WirelessChannel(sampleRate, 0, 0, SNR)
-    receivedSignal = myChannel1.receive(myPacket.IQ)
+    receivedSignal = utils.butter_lowpass_filter(myChannel1.receive(myPacket.IQ), cutoff, fs, order)
     idealReceivedSignal = myChannel2.receive(myPacket.IQ)
 
     ## receiver
@@ -53,18 +55,18 @@ if __name__ == "__main__":
     ############################### PLOT ########################################################
 
     # correlation plot
-    NormalizationCte = float(abs(np.correlate(idealReceivedSignal, idealReceivedSignal)))
-    nbPointsToPlot = 100
-    corrIdeal   = utils.correlate(idealReceivedSignal, idealReceivedSignal, nbPointsToPlot, NormalizationCte)
-    corrRec     = utils.correlate(receivedSignal     , idealReceivedSignal, nbPointsToPlot, NormalizationCte)
-    corrCorr    = utils.correlate(correctedSignal    , idealReceivedSignal, nbPointsToPlot, NormalizationCte)
+    NormalizationCte = float(abs(np.correlate(myPacket.IQ, myPacket.IQ)))
+    nbPointsToPlot = 50
+    corrIdeal   = utils.correlate(idealReceivedSignal, myPacket.IQ, nbPointsToPlot, NormalizationCte)
+    corrRec     = utils.correlate(receivedSignal     , myPacket.IQ, nbPointsToPlot, NormalizationCte)
+    corrCorr    = utils.correlate(correctedSignal    , myPacket.IQ, nbPointsToPlot, NormalizationCte)
     ideal, = plt.plot(corrIdeal, 'c--')
     rec, = plt.plot(corrRec, 'kx-')
     corr, = plt.plot(corrCorr, 'b')
     plt.legend([ideal, rec, corr], ['IDEAL', 'NON-CORRECTED', 'CPS'], loc=1)
     ideal.set_linewidth(4)
     corr.set_linewidth(2)
-    plt.axhline(linewidth=2, color='g', y=0.6)
+    plt.axhline(linewidth=2, color='g', y=0.95)
     plt.ylim(0, 1)
     plt.xlim(0, nbPointsToPlot)
     plt.grid(b=None, which='major', axis='y')
