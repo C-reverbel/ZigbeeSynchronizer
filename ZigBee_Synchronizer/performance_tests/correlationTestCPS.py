@@ -15,13 +15,13 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
-    zigbeePayloadNbOfBytes = 127  # 127
-    freqOffset = 400.
+    zigbeePayloadNbOfBytes = 127
+    freqOffset = 0.
     phaseOffset = 20.
-    SNR = 6.95
+    SNR = 7.55
 
     # Butterworth low-pass filter
-    cutoff = 3.8e6
+    cutoff = 2.5e6
     fs = sampleRate * 1e6
     order = 0
 
@@ -46,35 +46,83 @@ if __name__ == "__main__":
     ## receiver
     # CPS
     synchronizer2 = CPS(sampleRate)
-    correctedSignal, phaseVector, sign = synchronizer2.costasLoop(850000, receivedSignal)
+    correctedSignal, phaseVector, correctedBits = synchronizer2.costasLoop(850000, receivedSignal)
     # final instantaneous phase error estimated
     instPhase = np.zeros(N)
     instPhase[::] = phaseVector[::]
 
+    # ## demodulated signals
+    # receivedBits = np.sign(receivedSignal.real) + 1j * np.sign(receivedSignal.imag)
+    # idealBits = np.sign(myPacket.IQ.real) + 1j * np.sign(myPacket.IQ.imag)
+    # idealNoisyBits = np.sign(idealReceivedSignal.real) + 1j * np.sign(idealReceivedSignal.imag)
 
     ############################### PLOT ########################################################
 
-    # correlation plot
-    NormalizationCte = float(abs(np.correlate(myPacket.IQ, myPacket.IQ)))
-    nbPointsToPlot = 50
-    corrIdeal   = utils.correlate(idealReceivedSignal, myPacket.IQ, nbPointsToPlot, NormalizationCte)
-    corrRec     = utils.correlate(receivedSignal     , myPacket.IQ, nbPointsToPlot, NormalizationCte)
-    corrCorr    = utils.correlate(correctedSignal    , myPacket.IQ, nbPointsToPlot, NormalizationCte)
+    # # correlation plot
+    # NormalizationCte = float(abs(np.correlate(myPacket.IQ, myPacket.IQ)))
+    # nbPointsToPlot = 20
+    # corrIdeal   = utils.correlate(idealReceivedSignal, myPacket.IQ, nbPointsToPlot, NormalizationCte)
+    # corrRec     = utils.correlate(receivedSignal     , myPacket.IQ, nbPointsToPlot, NormalizationCte)
+    # corrCorr    = utils.correlate(correctedSignal    , myPacket.IQ, nbPointsToPlot, NormalizationCte)
+    # ideal, = plt.plot(corrIdeal, 'c--')
+    # rec, = plt.plot(corrRec, 'kx-')
+    # corr, = plt.plot(corrCorr, 'b')
+    # plt.legend([ideal, rec, corr], ['IDEAL', 'NON-CORRECTED', 'CPS'], loc=1)
+    # ideal.set_linewidth(4)
+    # corr.set_linewidth(2)
+    # plt.axhline(linewidth=2, color='g', y=0.95)
+    # plt.ylim(0, 1)
+    # plt.xlim(0, nbPointsToPlot)
+    # plt.grid(b=None, which='major', axis='y')
+    # plt.title("CORRELATION PLOT\n - SNR: " + str(SNR) + "dB - FreqOffset: " + str(freqOffset) + "Hz - PhaseOffset: " + str(phaseOffset) + "Deg")
+    # plt.ylabel("NORMALIZED AMPLITUDE")
+    # plt.xlabel("SAMPLES")
+    # plt.show()
+
+    # bits correlation
+    NormalizationCte = float(abs(np.correlate(myPacket.I, myPacket.I)))
+    nbPointsToPlot = 20
+    corrIdeal = utils.correlate(myPacket.I, myPacket.I, nbPointsToPlot, NormalizationCte)
+    recII  = utils.correlate(receivedSignal.real, myPacket.I,nbPointsToPlot, NormalizationCte)
+    recIQ  = utils.correlate(receivedSignal.real, myPacket.Q,nbPointsToPlot, NormalizationCte)
+    corrII = utils.correlate(correctedSignal.real, myPacket.I, nbPointsToPlot, NormalizationCte)
+    corrIQ = utils.correlate(correctedSignal.real, myPacket.Q, nbPointsToPlot, NormalizationCte)
     ideal, = plt.plot(corrIdeal, 'c--')
-    rec, = plt.plot(corrRec, 'kx-')
-    corr, = plt.plot(corrCorr, 'b')
-    plt.legend([ideal, rec, corr], ['IDEAL', 'NON-CORRECTED', 'CPS'], loc=1)
+    rii, = plt.plot(recII, 'rx-')
+    riq, = plt.plot(recIQ, 'bx-')
+    cii, = plt.plot(corrII, 'r')
+    ciq, = plt.plot(corrIQ, 'b')
+    plt.legend([ideal, rii, riq, cii, ciq], ['IDEAL', 'REC I-I', 'REC I-Q', 'CPS I-I', 'CPS I-Q'], loc=1)
     ideal.set_linewidth(4)
-    corr.set_linewidth(2)
+    rii.set_linewidth(0.5)
+    riq.set_linewidth(0.5)
     plt.axhline(linewidth=2, color='g', y=0.95)
     plt.ylim(0, 1)
     plt.xlim(0, nbPointsToPlot)
     plt.grid(b=None, which='major', axis='y')
-    plt.title("CORRELATION PLOT\n - SNR: " + str(SNR) + "dB - FreqOffset: " + str(freqOffset) + "Hz - PhaseOffset: " + str(phaseOffset) + "Deg")
+    plt.title(
+        "CORRELATION PLOT - I and Q\n - SNR: " + str(SNR) + "dB - FreqOffset: " + str(freqOffset) + "Hz - PhaseOffset: " + str(
+            phaseOffset) + "Deg")
     plt.ylabel("NORMALIZED AMPLITUDE")
     plt.xlabel("SAMPLES")
     plt.show()
 
+    # # time domain plot
+    # offset = 100
+    # numberPoints = 100
+    # samples = range(offset, offset + numberPoints)
+    # I_rec, = plt.plot(samples, receivedSignal.real[offset:offset + numberPoints], 'b')
+    # Q_rec, = plt.plot(samples, receivedSignal.imag[offset:offset + numberPoints], 'r')
+    # I_ideal, = plt.plot(samples, idealReceivedSignal.real[offset:offset + numberPoints], 'c--')
+    # Q_ideal, = plt.plot(samples, idealReceivedSignal.imag[offset:offset + numberPoints], '--', color='orange')
+    # plt.legend([I_ideal, Q_ideal, I_rec, Q_rec], \
+    #            ['I', 'Q', 'I REC', 'Q REC'], loc=3)
+    # plt.title("TIME DOMAIN IN-PHASE SIGNAL\n - SNR: " + str(SNR) + "dB - FreqOffset: " + str(freqOffset) + "Hz - PhaseOffset: " + str(phaseOffset) + "Deg")
+    # plt.ylabel("Amplitude (Volts)")
+    # plt.xlabel("samples")
+    # plt.axhline(y=0, color='k')
+    # plt.show()
+    #
     # plot phase differences
     plt.yticks(np.arange(-50, 50, 1))
     phaseDifference = np.unwrap(np.angle(correctedSignal)) - np.unwrap(np.angle(myPacket.IQ))
