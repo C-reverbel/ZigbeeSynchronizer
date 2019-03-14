@@ -1,6 +1,17 @@
+# Carrier Phase Synchronizer (CPS) performs a fine instantaneous phase compensation using Costas Loop algorithm
+#
+# INPUTS:
+#   - sampleRate : sample rate in MHz of the waveform. Suggested value = 8 MHz (8 samples per half-sine)
+#
+# METHODS:
+#   - costasLoop(freq, vector)
+#       - IN : freq, vector --> loop-filter cut-off frequency in Hz, ZigBee IQ complex signal
+#       - OUT: temp, phaseVect, sign --> corrected signal, vector with estimated instantaneous phase,
+#       IQ signal in binary format (values can assume +1 and -1 values)
+
 from ZigBeePacket import ZigBeePacket
 from WirelessChannel import WirelessChannel
-from CFS2 import CFS2
+from CFS_iterative import CFS_iterative
 import utils
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,7 +32,7 @@ class CPS:
         last, last_old, deltaPhi_old = 0, 0, 0
         for i in range(self.sampleRate/2,N):
             # rotate signal
-            temp[i] = self.compensatePhase(phase, temp[i])
+            temp[i] = self._compensatePhase(phase, temp[i])
             y_i = temp.real[i-self.sampleRate/2]
             y_q = temp.imag[i]
             # compute phase error
@@ -52,7 +63,7 @@ class CPS:
         C2 = (Wc * Ts) / (2 + Wc * Ts)
         return C1, C2
 
-    def compensatePhase(self, phase, signal):
+    def _compensatePhase(self, phase, signal):
         return np.exp(-1j * phase) * signal
 
 if __name__ == "__main__":

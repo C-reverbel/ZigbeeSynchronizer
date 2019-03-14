@@ -1,3 +1,13 @@
+# ZigBeePacket Class creates IEEE 802.15.4 compliant waveforms. The O-QPSK modulated signal varies in amplitude from -1
+# to +1.
+#
+# INPUTS:
+#  - payloadNbOfBytes : size of payload in bytes, from 0 to 127. payload value generated randomly
+#  - sampleRate       : sample rate in MHz of the waveform. Suggested value = 8 MHz (8 samples per half-sine)
+#
+# OUTPUT:
+#  - IQ : complex vector with In-phase (real part) and Quadrature (imaginary part) components
+
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,16 +32,16 @@ symbol2Chip = {
 } # formatted in MSB first
 
 class ZigBeePacket:
-    def __init__(self, preambleNbOfBytes, simulationFrequency):
+    def __init__(self, payloadNbOfBytes, sampleRate):
         # variables in symbols
         self.preambleInSymbol    = ["0000", "0000",
                                     "0000", "0000",
                                     "0000", "0000",
                                     "0000", "0000"]
         self.SFDInSymbol         = ["1010", "0111"]
-        self.PHRInSymbol         = self.computePHR(preambleNbOfBytes)
-        self.payloadInSymbol     = self.randomPayload(preambleNbOfBytes)
-        # variables formatted in chip (already formatted to be sent)
+        self.PHRInSymbol         = self.computePHR(payloadNbOfBytes)
+        self.payloadInSymbol     = self.randomPayload(payloadNbOfBytes)
+        # variables in chip format (already formatted to be sent)
         self.preamble = self.symbolToChip(self.preambleInSymbol)
         self.SFD      = self.symbolToChip(self.SFDInSymbol)
         self.PHR      = self.symbolToChip(self.PHRInSymbol)
@@ -41,16 +51,16 @@ class ZigBeePacket:
         self.messageI       = self.messageInChip[0::2]
         self.messageQ       = self.messageInChip[1::2]
         # I and Q oversampled in +1 to -1 range
-        self.oversampledI   = self.oversampleMessage(self.messageI, simulationFrequency)
-        self.oversampledQ   = self.oversampleMessage(self.messageQ, simulationFrequency)
+        self.oversampledI   = self.oversampleMessage(self.messageI, sampleRate)
+        self.oversampledQ   = self.oversampleMessage(self.messageQ, sampleRate)
         # I and Q fully formatted in half-sine format
-        self.tempI = self.halfSineShaping(self.oversampledI, simulationFrequency)
-        self.tempQ = self.halfSineShaping(self.oversampledQ, simulationFrequency)
-        tempZeros  = np.zeros(simulationFrequency / 2)
+        self.tempI = self.halfSineShaping(self.oversampledI, sampleRate)
+        self.tempQ = self.halfSineShaping(self.oversampledQ, sampleRate)
+        tempZeros  = np.zeros(sampleRate / 2)
         self.Q     = np.insert(self.tempQ, 0, tempZeros)
         self.I     = np.insert(self.tempI, self.tempI.__len__(), tempZeros)
         self.IQ    = self.I + 1j * self.Q
-        self.IQ_QPSK = self.I + 1j * np.roll(self.Q,- (simulationFrequency / 2))
+        self.IQ_QPSK = self.I + 1j * np.roll(self.Q, - (sampleRate / 2))
 
     def computePHR(self, preambleNbOfBytes):
         temp = "0" + '{0:07b}'.format(preambleNbOfBytes)

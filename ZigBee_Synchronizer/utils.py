@@ -1,9 +1,9 @@
 import numpy as np
-from scipy.signal import butter, lfilter, freqz
+from scipy.signal import butter, lfilter
 import matplotlib.pyplot as plt
 
-from ZigBeePacket import ZigBeePacket
-from WirelessChannel import WirelessChannel
+from System_blocks.ZigBeePacket import ZigBeePacket
+from System_blocks.WirelessChannel import WirelessChannel
 
 
 def _butter_lowpass(cutoff, fs, order=5):

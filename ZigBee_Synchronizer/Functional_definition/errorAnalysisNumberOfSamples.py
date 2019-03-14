@@ -3,9 +3,9 @@
 #  myPacket.IQ --> | CHANNEL | -- receivedSignal --> | CFS | -- preCorrectedSignal --> | CPS | --> correctedSignal
 #                  |_________|                       |_____|                           |_____|
 #
-from ZigBeePacket import ZigBeePacket
-from WirelessChannel import WirelessChannel
-from CFS2 import CFS2
+from System_blocks.ZigBeePacket import ZigBeePacket
+from System_blocks.WirelessChannel import WirelessChannel
+from System_blocks.CFS_iterative import CFS_iterative
 import utils
 import numpy as np
 import matplotlib.pyplot as plt
@@ -47,7 +47,7 @@ if __name__ == "__main__":
             # number of samples used to estimate frequency and phase
             nbOfSamples = i * 128
             # sample rate (MHz), number of samples - 2 to compute linear regression
-            synchronizer = CFS2(sampleRate, nbOfSamples)
+            synchronizer = CFS_iterative(sampleRate, nbOfSamples)
             # estimate frequency and phase offset
             phaseDifference = np.unwrap(np.angle(receivedSignal)) - np.unwrap(np.angle(myPacket.IQ))
             freqOffsetEstimated, phaseOffsetEstimated = synchronizer.estimateFrequencyAndPhaseIterative(phaseDifference)

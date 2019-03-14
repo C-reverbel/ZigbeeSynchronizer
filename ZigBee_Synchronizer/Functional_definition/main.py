@@ -3,11 +3,11 @@
 #  myPacket.IQ --> | CHANNEL | -- receivedSignal --> | CFS | -- preCorrectedSignal --> | CPS | --> correctedSignal
 #                  |_________|                       |_____|                           |_____|
 #
-from ZigBeePacket import ZigBeePacket
-from WirelessChannel import WirelessChannel
-from CFS2 import CFS2
-from CFS import CFS
-from CPS import CPS
+from System_blocks.ZigBeePacket import ZigBeePacket
+from System_blocks.WirelessChannel import WirelessChannel
+from System_blocks.CFS_iterative import CFS_iterative
+from System_blocks.CFS_direct import CFS_direct
+from System_blocks.CPS import CPS
 import utils
 import numpy as np
 import matplotlib.pyplot as plt
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     ## CFS
     # sample rate (MHz), number of samples - 2 to compute linear regression
-    synchronizer = CFS2(sampleRate, nbOfSamples, 4)
+    synchronizer = CFS_iterative(sampleRate, nbOfSamples, 4)
     # estimate frequency and phase offset
     phaseDifference = np.unwrap(np.angle(receivedSignal)) - np.unwrap(np.angle(myPacket.IQ))
     freqOffsetEstimated, phaseOffsetEstimated = synchronizer.estimateFrequencyAndPhaseIterative(phaseDifference)
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     time = np.arange(0, maxTime, timeStep)
 
     # ideal received signal, no freq or phase offset
-    sync = CFS(sampleRate, nbOfSamples)
+    sync = CFS_direct(sampleRate, nbOfSamples)
     idealReceivedSignal = sync.compensateFrequencyAndPhase(freqOffset, phaseOffset, myChannel.receive(myPacket.IQ))
 
     ################################################### PLOT

@@ -3,9 +3,9 @@
 #  myPacket.IQ --> | CHANNEL | -- receivedSignal --> | CFS | -- preCorrectedSignal --> | CPS | --> correctedSignal
 #                  |_________|                       |_____|                           |_____|
 #
-from ZigBeePacket import ZigBeePacket
-from WirelessChannel import WirelessChannel
-from CPS import CPS
+from System_blocks.ZigBeePacket import ZigBeePacket
+from System_blocks.WirelessChannel import WirelessChannel
+from System_blocks.CPS import CPS
 import utils
 
 import numpy as np
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
     freqOffset = 500.
-    phaseOffset = 70.
+    phaseOffset = 80.
     SNR = 10.
 
     # Butterworth low-pass filter

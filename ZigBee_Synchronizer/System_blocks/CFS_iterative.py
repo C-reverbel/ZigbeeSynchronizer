@@ -1,9 +1,36 @@
+# Implements data-aided ZigBee synchronization algorithm.
+#
+# Carrier Frequency Synchronizer, CFS, uses preamble information to recover frequency and phase
+# offsets. The algorithm computes input signal's unwrapped phase and subtracts it from ideal (no
+# offset) preamble unwrapped phase.
+#
+# The result is a line (y = a.x + b) whose slope (a) is the frequency offset (in rad/s) and whose
+# offset (b) is the phase offset (in rad).
+#
+# INPUTS:
+#  - sampleRate    : sample rate in MHz of the waveform. Suggested value = 8 MHz (8 samples per half-sine)
+#  - nbOfSamples   : number of samples used to estimate frequency and phase offsets. Max of 1024 samples for
+#  a full preamble when sampleRate = 8.
+#  - samplesOffset : number of samples to jump when starting computing frequency and phase offsets. Default to
+#  4 samples, what corresponds to 1/2 half-sine when sampleRate = 8. Recommended samplesOffset = sampleRate / 2
+#
+# METHODS:
+#   - estimateFrequencyAndPhaseIterative(phaseDifference)
+#       - IN : phaseDifference --> phase difference of unwrapped phases in radian
+#       - OUT: freq, phase --> estimated frequency in Hz and phase in degrees vectors
+#   - generatePhaseVector(freqVect, phaseVect)
+#       - IN : freqVect, phaseVect --> outputs of estimateFrequencyAndPhaseIterative() method
+#       - OUT: instantaneous estimated phase
+#   - compensatePhase(phase, signal)
+#       - IN : phase, signal --> output of generatePhaseVector(), signal to be compensated
+#       - OUT: compensated signal
+
 from ZigBeePacket import ZigBeePacket
 from WirelessChannel import WirelessChannel
 import numpy as np
 import matplotlib.pyplot as plt
 
-class CFS2:
+class CFS_iterative:
     def __init__(self, sampleRate, nbOfSamples, samplesOffset = 4):
         self.sampleRate = sampleRate
         self.nbOfSamples = nbOfSamples
@@ -95,7 +122,7 @@ if __name__ == "__main__":
     phaseDifference = receivedUnwrappedPhase - idealUnwrappedPhase
 
     # sample rate (MHz), number of samples - 2 to compute linear regression
-    synchronizer = CFS2(sampleRate, nbOfSamples)
+    synchronizer = CFS_iterative(sampleRate, nbOfSamples)
     freqOffsetVector, phaseOffsetVector = synchronizer.estimateFrequencyAndPhaseIterative(phaseDifference)
     corrVector = synchronizer.generatePhaseVector(freqOffsetVector, phaseOffsetVector)
     # PHASE AND FREQUENCY CORRECTION

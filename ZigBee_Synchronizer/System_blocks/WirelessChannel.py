@@ -1,3 +1,18 @@
+# This class simulates the effect of a noisy channel + frequency and phase mismatch between transmitter and
+# receiver. It receives a clean base-band signal and adds noise, frequency and phase offset to it, returning
+# the new base-band signal.
+#
+# INPUT:
+#   - sampleRate  : sample rate in MHz of the waveform. Suggested value = 8 MHz (8 samples per half-sine)
+#   - freqOffset  : frequency offset (in Hz) to add to the signal
+#   - phaseOffset : phase offset (in Degrees) to add to the signal
+#   - SNR         : Signal to Noise Ration of output signal
+#
+# METHODS:
+#   - receive(message)
+#       - IN : message --> base-band ZigBee IQ complex signal
+#       - OUT: base-band ZigBee IQ complex signal with noise, frequency and phase offset
+
 from ZigBeePacket import ZigBeePacket
 import numpy as np
 import matplotlib.pyplot as plt

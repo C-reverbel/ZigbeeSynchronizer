@@ -3,9 +3,9 @@
 #  myPacket.IQ --> | CHANNEL | -- receivedSignal --> | CFS | -- preCorrectedSignal --> | CPS | --> correctedSignal
 #                  |_________|                       |_____|                           |_____|
 #
-from ZigBeePacket import ZigBeePacket
-from WirelessChannel import WirelessChannel
-from CFS import CFS
+from System_blocks.ZigBeePacket import ZigBeePacket
+from System_blocks.WirelessChannel import WirelessChannel
+from System_blocks.CFS_direct import CFS_direct
 import utils
 import numpy as np
 import matplotlib.pyplot as plt
@@ -43,7 +43,7 @@ if __name__ == "__main__":
             myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
             receivedSignal = utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ), cutoff, fs, order)
             # sample rate (MHz), number of samples - 2 to compute linear regression
-            freqEstimator = CFS(sampleRate, nbOfSamples)
+            freqEstimator = CFS_direct(sampleRate, nbOfSamples)
             # estimate frequency and phase offset
             idealUnwrappedPhase = np.unwrap(np.angle(myPacket.IQ))
             receivedUnwrappedPhase = np.unwrap(np.angle(receivedSignal))

@@ -1,11 +1,9 @@
-from ZigBeePacket import ZigBeePacket
-from WirelessChannel import WirelessChannel
-from CFS2 import CFS2
-from CFS import CFS
-from CPS import CPS
+from System_blocks.ZigBeePacket import ZigBeePacket
+from System_blocks.WirelessChannel import WirelessChannel
+from System_blocks.CFS_iterative import CFS_iterative
+from System_blocks.CPS import CPS
 import utils
 import numpy as np
-import matplotlib.pyplot as plt
 
 N_TEST = 0
 
@@ -77,7 +75,7 @@ def do_test(nbOfSamples, payloadSize, freqOffset, phaseOffset, snr, coff, sample
 
         ## CFS
         # sample rate (MHz), number of samples - 2 to compute linear regression
-        synchronizer = CFS2(sampleRate, nbOfSamples, 4)
+        synchronizer = CFS_iterative(sampleRate, nbOfSamples, 4)
         # estimate frequency and phase offset
         phaseDifference = np.unwrap(np.angle(receivedSignal)) - np.unwrap(np.angle(myPacket.IQ))
         freqOffsetEstimated, phaseOffsetEstimated = synchronizer.estimateFrequencyAndPhaseIterative(phaseDifference)
