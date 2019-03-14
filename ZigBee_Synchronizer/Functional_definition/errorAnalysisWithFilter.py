@@ -3,6 +3,9 @@
 #  myPacket.IQ --> | CHANNEL | -- receivedSignal --> | CFS | -- preCorrectedSignal --> | CPS | --> correctedSignal
 #                  |_________|                       |_____|                           |_____|
 #
+import sys
+sys.path.append('../')
+
 from System_blocks.ZigBeePacket import ZigBeePacket
 from System_blocks.WirelessChannel import WirelessChannel
 from System_blocks.CFS_direct import CFS_direct
