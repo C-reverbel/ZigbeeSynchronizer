@@ -62,13 +62,24 @@ if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
-    freqOffset = 1000.
-    phaseOffset = 24.
-    SNR = 8.
-    # Butterworth low-pass filter
+    freqOffset = 500.
+    phaseOffset = 35.
+    SNR = 10.
+    nbOfBits = 16
+    # get values from command prompt
+    try:
+        if sys.argv > 1 : zigbeePayloadNbOfBytes = int(sys.argv[1])
+        if sys.argv > 2 : freqOffset = float(sys.argv[2])
+        if sys.argv > 3 : phaseOffset = float(sys.argv[3])
+        if sys.argv > 4 : SNR = float(sys.argv[4])
+        if sys.argv > 5 : nbOfBits = int(sys.argv[5])
+    except:
+        pass
+
+    # Butterworth low-pass filter (NOT USED)
     cutoff = 2.5e6
     fs = sampleRate * 1e6
-    order = 0
+    order = 0   # oder = 0 means no filter
     # payload in bytes, sample-rate in MHz
     myPacket = ZigBeePacket(zigbeePayloadNbOfBytes, sampleRate)
     N = myPacket.I.__len__()
@@ -80,7 +91,6 @@ if __name__ == "__main__":
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
     receivedSignal = utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ), cutoff, fs, order)
     # low resolution signal
-    nbOfBits = 16
     maxVal = (2 ** (nbOfBits - 1) - 1)
     # get ideal signals
     i_ideal_int, i_ideal_bin, i_ideal_hex = float_to_int_bin_hex(myPacket.IQ.real, nbOfBits)
@@ -98,13 +108,13 @@ if __name__ == "__main__":
     # get corrected signals
     i_corr_int, i_corr_bin, i_corr_hex = float_to_int_bin_hex(correctedSignal.real, nbOfBits)
     q_corr_int, q_corr_bin, q_corr_hex = float_to_int_bin_hex(correctedSignal.imag, nbOfBits)
-
-    name_i_ideal = getFileName("sim_values", "i_ideal_", zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
-    name_q_ideal = getFileName("sim_values", "q_ideal_", zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
-    name_i_raw   = getFileName("sim_values", "i_raw_"  , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
-    name_q_raw   = getFileName("sim_values", "q_raw_"  , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
-    name_i_corr  = getFileName("sim_values", "i_corr_" , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
-    name_q_corr  = getFileName("sim_values", "q_corr_" , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
+    folderName = "sim_values"
+    name_i_ideal = getFileName(folderName, "i_ideal_", zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
+    name_q_ideal = getFileName(folderName, "q_ideal_", zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
+    name_i_raw   = getFileName(folderName, "i_raw_"  , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
+    name_q_raw   = getFileName(folderName, "q_raw_"  , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
+    name_i_corr  = getFileName(folderName, "i_corr_" , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
+    name_q_corr  = getFileName(folderName, "q_corr_" , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
 
     f_i_ideal = open(name_i_ideal, 'w')
     f_q_ideal = open(name_q_ideal, 'w')
@@ -127,6 +137,14 @@ if __name__ == "__main__":
     f_q_raw.close()
     f_i_corr.close()
     f_q_corr.close()
+
+    print "Successfully generated random Zigbee packet with:"
+    print "- " + str(zigbeePayloadNbOfBytes) + " bytes payload;"
+    print "- " + str(freqOffset) + " Hz frequency offset;"
+    print "- " + str(phaseOffset) + " Degrees phase offset;"
+    print "- " + str(SNR) + " dB SNR;"
+    print "-------------------------------------------------"
+    print "Output files inside folder ./" + str(folderName) + "/ with " + str(nbOfBits) + " bits resolution."
 
 
     #### PRINT ###
