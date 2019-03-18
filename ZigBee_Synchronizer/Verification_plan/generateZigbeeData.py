@@ -74,7 +74,15 @@ if __name__ == "__main__":
         if sys.argv > 4 : SNR = float(sys.argv[4])
         if sys.argv > 5 : nbOfBits = int(sys.argv[5])
     except:
-        pass
+        print "No arguments passed. Default parameters used."
+        print "python generateZigbeeData.py payloadNbOfBytes frequency_offset phase_offset SNR nbOfBits"
+        print "----------------------------------------------------------------------------------------"
+        print " - payloadNbOfBytes = number of bytes of packet payload, default = " + str(zigbeePayloadNbOfBytes)
+        print " - frequency_offset in Hz,                               default = " + str(freqOffset) + " Hz"
+        print " - phase_offset in degrees,                              default = " + str(freqOffset) + " degrees"
+        print " - SNR (Signal to Noise Ratio) in dB,                    default = " + str(SNR) + " dB"
+        print " - nbOfBits = data resolution in bits,                   default = " + str(nbOfBits) + " bits"
+        print ""
 
     # Butterworth low-pass filter (NOT USED)
     cutoff = 2.5e6
