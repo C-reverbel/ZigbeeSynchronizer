@@ -24,19 +24,25 @@ class WirelessChannel:
         self.phaseOffset = phaseOffset
         self.SNR         = SNR
 
-    def receive(self, message):
+    def receive(self, message, leadingNoiseSamples = 0, trailingNoiseSamples = 0):
         N = message.__len__()
         n = np.arange(N)
+
+        self.LNS = leadingNoiseSamples
+        self.TNS = trailingNoiseSamples
 
         cos = np.cos(2 * np.pi * 1e-6 * self.freqOffset * n / self.sampleRate + np.pi * self.phaseOffset / 180)
         sin = np.sin(2 * np.pi * 1e-6 * self.freqOffset * n / self.sampleRate + np.pi * self.phaseOffset / 180)
 
         signalPower = self._computeSignalPower(message)
-        noise1 = self._computeNoiseSignal(signalPower, self.SNR, N)
-        noise2 = self._computeNoiseSignal(signalPower, self.SNR, N)
+        noise1 = self._computeNoiseSignal(signalPower, self.SNR, N + self.LNS + self.TNS)
+        noise2 = self._computeNoiseSignal(signalPower, self.SNR, N + self.LNS + self.TNS)
 
-        resultReal = message.real * cos - message.imag * sin
-        resultImag = message.imag * cos + message.real * sin
+        tempReal = message.real * cos - message.imag * sin
+        tempImag = message.imag * cos + message.real * sin
+        # append leading and trailing zeros to the message
+        resultReal = np.pad(tempReal, (self.LNS,self.TNS), 'constant', constant_values=(0,0))
+        resultImag = np.pad(tempImag, (self.LNS,self.TNS), 'constant', constant_values=(0,0))
 
         result = (resultReal + noise1 / np.sqrt(2)) + 1j * (resultImag + noise2 / np.sqrt(2))
 
@@ -59,8 +65,8 @@ class WirelessChannel:
 
 if __name__ == "__main__":
     sampleRate = 8
-    SNR = 10
-    freqOffset = 200e3
+    SNR = 15
+    freqOffset = 0.
     phaseOffset = 10
     # payload size in bytes, sample-rate in MHz
     myPacket = ZigBeePacket(20, sampleRate)
@@ -69,7 +75,7 @@ if __name__ == "__main__":
 
     N = myPacket.I.__len__()
     txSignalPower = myChannel._computeSignalPower(myPacket.IQ)
-    receivedMessage = myChannel.receive(myPacket.IQ)
+    receivedMessage = myChannel.receive(myPacket.IQ, 10, 5)
     rxSignalPower = myChannel._computeSignalPower(receivedMessage)
 
 

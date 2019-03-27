@@ -46,16 +46,26 @@ def extractPhase(signal):
     return np.sign(signal.real) + 1j * np.sign(signal.imag)
 
 def correlate(signal1, signal2, sizeToPlot, normalizationCte = 1):
-    N = signal2.__len__()
-    tempVec = np.concatenate((signal1, np.zeros(N)), axis=0)
-    tempVec = np.roll(tempVec, N)
-    tempVec = np.roll(tempVec, -sizeToPlot/2)
-    result = []
-    for i in range(sizeToPlot):
-        temp = float(abs(np.correlate(tempVec[N:], signal2))) / normalizationCte
-        result.append(temp)
-        tempVec = np.roll(tempVec,1)
-        #print i , N
+    if signal2.__len__() > signal1.__len__():
+        N = signal2.__len__()
+        tempVec = np.concatenate((signal1, np.zeros(N)), axis=0)
+        tempVec = np.roll(tempVec, N)
+        tempVec = np.roll(tempVec, -sizeToPlot/2)
+        result = []
+        for i in range(sizeToPlot):
+            temp = float(abs(np.correlate(tempVec[-N:], signal2))) / normalizationCte
+            result.append(temp)
+            tempVec = np.roll(tempVec,1)
+    else:
+        N = signal1.__len__()
+        tempVec = np.concatenate((signal2, np.zeros(N)), axis=0)
+        tempVec = np.roll(tempVec, N)
+        tempVec = np.roll(tempVec, -sizeToPlot / 2)
+        result = []
+        for i in range(sizeToPlot):
+            temp = float(abs(np.correlate(tempVec[-N:], signal1))) / normalizationCte
+            result.append(temp)
+            tempVec = np.roll(tempVec, 1)
     return result
 
 if __name__ == "__main__":

@@ -20,8 +20,11 @@ if __name__ == "__main__":
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
     freqOffset = 500.
-    phaseOffset = 80.
+    phaseOffset = 10.
     SNR = 10.
+
+    leadingNoiseSamples = 30
+    trailingNoiseSamples = 10
 
     # Butterworth low-pass filter
     cutoff = 2.5e6
@@ -43,15 +46,16 @@ if __name__ == "__main__":
     # channel
     myChannel1 = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
     myChannel2 = WirelessChannel(sampleRate, 0, 0, SNR)
-    receivedSignal = utils.butter_lowpass_filter(myChannel1.receive(myPacket.IQ), cutoff, fs, order)
+    receivedSignal = utils.butter_lowpass_filter(myChannel1.receive(myPacket.IQ, leadingNoiseSamples, trailingNoiseSamples), cutoff, fs, order)
     idealReceivedSignal = myChannel2.receive(myPacket.IQ)
 
+    N_ext = receivedSignal.real.__len__()
     ## receiver
     # CPS
     synchronizer2 = CPS(sampleRate)
     correctedSignal, phaseVector, correctedBits = synchronizer2.costasLoop(850000, receivedSignal)
     # final instantaneous phase error estimated
-    instPhase = np.zeros(N)
+    instPhase = np.zeros(N_ext)
     instPhase[::] = phaseVector[::]
 
     # ## demodulated signals
@@ -84,7 +88,7 @@ if __name__ == "__main__":
 
     # bits correlation
     NormalizationCte = float(abs(np.correlate(myPacket.I, myPacket.I)))
-    nbPointsToPlot = 20
+    nbPointsToPlot = 50
     corrIdeal = utils.correlate(myPacket.I, myPacket.I, nbPointsToPlot, NormalizationCte)
     recII  = utils.correlate(receivedSignal.real, myPacket.I,nbPointsToPlot, NormalizationCte)
     recIQ  = utils.correlate(receivedSignal.real, myPacket.Q,nbPointsToPlot, NormalizationCte)
@@ -128,7 +132,7 @@ if __name__ == "__main__":
     #
     # plot phase differences
     plt.yticks(np.arange(-50, 50, 1))
-    phaseDifference = np.unwrap(np.angle(correctedSignal)) - np.unwrap(np.angle(myPacket.IQ))
+    phaseDifference = np.unwrap(np.angle(correctedSignal[leadingNoiseSamples:-trailingNoiseSamples])) - np.unwrap(np.angle(myPacket.IQ))
     phaseNoiseCPS, = plt.plot(1e3 * time, phaseDifference * 2 / np.pi, 'b')
     phaseNoiseCPS.set_linewidth(0.5)
     plt.title("PHASE ERROR\n - SNR: " + str(SNR) + "dB - FreqOffset: " + str(freqOffset) + "Hz - PhaseOffset: " + str(phaseOffset) + "Deg")

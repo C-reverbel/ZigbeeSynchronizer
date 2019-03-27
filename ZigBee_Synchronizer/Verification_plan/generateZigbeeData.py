@@ -12,6 +12,7 @@ from System_blocks.WirelessChannel import WirelessChannel
 from System_blocks.CPS import CPS
 import utils
 import numpy as np
+import matplotlib.pyplot as plt
 
 def lowRes(val, nbBits):
     N = val.__len__()
@@ -66,6 +67,8 @@ if __name__ == "__main__":
     phaseOffset = 35.
     SNR = 10.
     nbOfBits = 16
+    leadingNoiseSamples = 30
+    trailingNoiseSamples = 15
     # get values from command prompt
     try:
         if sys.argv > 1 : zigbeePayloadNbOfBytes = int(sys.argv[1])
@@ -79,7 +82,7 @@ if __name__ == "__main__":
         print "----------------------------------------------------------------------------------------"
         print " - payloadNbOfBytes = number of bytes of packet payload, default = " + str(zigbeePayloadNbOfBytes)
         print " - frequency_offset in Hz,                               default = " + str(freqOffset) + " Hz"
-        print " - phase_offset in degrees,                              default = " + str(freqOffset) + " degrees"
+        print " - phase_offset in degrees,                              default = " + str(phaseOffset) + " degrees"
         print " - SNR (Signal to Noise Ratio) in dB,                    default = " + str(SNR) + " dB"
         print " - nbOfBits = data resolution in bits,                   default = " + str(nbOfBits) + " bits"
         print ""
@@ -97,7 +100,7 @@ if __name__ == "__main__":
     time = np.arange(0, maxTime, timeStep)
     # channel
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
-    receivedSignal = utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ), cutoff, fs, order)
+    receivedSignal = utils.butter_lowpass_filter(myChannel.receive(myPacket.IQ, leadingNoiseSamples, trailingNoiseSamples), cutoff, fs, order)
     # low resolution signal
     maxVal = (2 ** (nbOfBits - 1) - 1)
     # get ideal signals
@@ -159,9 +162,9 @@ if __name__ == "__main__":
     #print "HEX  BIN              INT"
     #print "-------------------------"
     #for i in range(16):
-    #    print i_hex[i], i_bin[i], i_int[i]
+    #    print i_raw_int[i], i_raw_bin[i], i_raw_hex[i]
     #
-    #printOffset = 30000
+    #printOffset = 0
     #printRange = 100
     #
     #idealI, = plt.plot(i_ideal_int[printOffset:printOffset + printRange],'b-')
@@ -179,5 +182,3 @@ if __name__ == "__main__":
     #plt.axhline(linewidth=2, color='g', y=maxVal)
     #plt.axhline(linewidth=2, color='g', y=-maxVal)
     #plt.show()
-
-
