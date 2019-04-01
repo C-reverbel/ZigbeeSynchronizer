@@ -19,12 +19,12 @@ if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
     zigbeePayloadNbOfBytes = 127
-    freqOffset = 500.
-    phaseOffset = 10.
-    SNR = 10.
+    freqOffset = 10.
+    phaseOffset =160.
+    SNR = 1000.
 
-    leadingNoiseSamples = 30
-    trailingNoiseSamples = 10
+    leadingNoiseSamples = 0
+    trailingNoiseSamples = 0
 
     # Butterworth low-pass filter
     cutoff = 2.5e6
@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     # bits correlation
     NormalizationCte = float(abs(np.correlate(myPacket.I, myPacket.I)))
-    nbPointsToPlot = 50
+    nbPointsToPlot = 100
     corrIdeal = utils.correlate(myPacket.I, myPacket.I, nbPointsToPlot, NormalizationCte)
     recII  = utils.correlate(receivedSignal.real, myPacket.I,nbPointsToPlot, NormalizationCte)
     recIQ  = utils.correlate(receivedSignal.real, myPacket.Q,nbPointsToPlot, NormalizationCte)
@@ -132,7 +132,10 @@ if __name__ == "__main__":
     #
     # plot phase differences
     plt.yticks(np.arange(-50, 50, 1))
-    phaseDifference = np.unwrap(np.angle(correctedSignal[leadingNoiseSamples:-trailingNoiseSamples])) - np.unwrap(np.angle(myPacket.IQ))
+    if leadingNoiseSamples == 0 and trailingNoiseSamples == 0:
+        phaseDifference = np.unwrap(np.angle(correctedSignal)) - np.unwrap(np.angle(myPacket.IQ))
+    else:
+        phaseDifference = np.unwrap(np.angle(correctedSignal[leadingNoiseSamples:-trailingNoiseSamples])) - np.unwrap(np.angle(myPacket.IQ))
     phaseNoiseCPS, = plt.plot(1e3 * time, phaseDifference * 2 / np.pi, 'b')
     phaseNoiseCPS.set_linewidth(0.5)
     plt.title("PHASE ERROR\n - SNR: " + str(SNR) + "dB - FreqOffset: " + str(freqOffset) + "Hz - PhaseOffset: " + str(phaseOffset) + "Deg")
@@ -153,3 +156,12 @@ if __name__ == "__main__":
     plt.ylabel("INSTANTANEOUS PHASE (rad)")
     plt.xlabel("TIME (ms)")
     plt.show()
+
+
+    #samplToPlot = 20
+    #plt.plot(time[0:samplToPlot]*1000, myPacket.I[0:samplToPlot], 'x--')
+    #plt.plot(time[0:samplToPlot] * 1000, myPacket.Q[0:samplToPlot], 'o--')
+    #for p in np.arange(0, samplToPlot * 125e-6, 125e-6):
+    #    plt.axvline(linewidth=1, color='g', x=p)
+    #    print p
+    #plt.show()
