@@ -42,7 +42,9 @@ class CPS:
             # loop filter
             last, last_old, deltaPhi_old = self._iterativeLowPassFilter(freq, last, last_old, deltaPhi, deltaPhi_old)
             # constant value empirically tested :p
-            phase += 0.0625 * last
+            phase += (0.0625 * last)
+            phase = phase % (2 * np.pi)
+            phase = phase if phase < np.pi else (phase - 2 * np.pi)
             # also return phase and signal for debug only
             phaseVect[i] = phase
             sign[i] = signI + 1j*signQ

@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     accFreqErrorVector = np.zeros(8)
     accPhaseErrorVector = np.zeros(8)
-    nbOfSimulations = 100
+    nbOfSimulations = 10
     for i in range(1,9):
         for j in range(nbOfSimulations):
             # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)

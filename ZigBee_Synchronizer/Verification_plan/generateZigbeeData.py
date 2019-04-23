@@ -67,8 +67,8 @@ if __name__ == "__main__":
     phaseOffset = 35.
     SNR = 10.
     nbOfBits = 16
-    leadingNoiseSamples = 30
-    trailingNoiseSamples = 15
+    leadingNoiseSamples = 0
+    trailingNoiseSamples = 0
     # get values from command prompt
     try:
         if sys.argv > 1 : zigbeePayloadNbOfBytes = int(sys.argv[1])
@@ -119,6 +119,12 @@ if __name__ == "__main__":
     # get corrected signals
     i_corr_int, i_corr_bin, i_corr_hex = float_to_int_bin_hex(correctedSignal.real, nbOfBits)
     q_corr_int, q_corr_bin, q_corr_hex = float_to_int_bin_hex(correctedSignal.imag, nbOfBits)
+    # get delta_phi signal
+    scaled_delta_phi = phaseVector / np.pi
+    delta_phi_int, delta_phi_bin, delta_phi_hex = float_to_int_bin_hex(scaled_delta_phi, nbOfBits)
+    print "DELTA_PHI"
+    print [delta_phi_hex[x] for x in range(10)]
+
     folderName = "sim_values"
     name_i_ideal = getFileName(folderName, "i_ideal_", zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
     name_q_ideal = getFileName(folderName, "q_ideal_", zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
@@ -126,6 +132,7 @@ if __name__ == "__main__":
     name_q_raw   = getFileName(folderName, "q_raw_"  , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
     name_i_corr  = getFileName(folderName, "i_corr_" , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
     name_q_corr  = getFileName(folderName, "q_corr_" , zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
+    name_delta_phi = getFileName(folderName, "delta_phi_", zigbeePayloadNbOfBytes, freqOffset, phaseOffset, SNR, nbOfBits)
 
     f_i_ideal = open(name_i_ideal, 'w')
     f_q_ideal = open(name_q_ideal, 'w')
@@ -133,6 +140,7 @@ if __name__ == "__main__":
     f_q_raw   = open(name_q_raw,   'w')
     f_i_corr  = open(name_i_corr,  'w')
     f_q_corr  = open(name_q_corr,  'w')
+    f_delta_phi = open(name_delta_phi, 'w')
 
     for i in range(N):
         f_i_ideal.write(i_ideal_hex[i] + "\n")
@@ -141,6 +149,7 @@ if __name__ == "__main__":
         f_q_raw.write(q_raw_hex[i] + "\n")
         f_i_corr.write(i_corr_hex[i] + "\n")
         f_q_corr.write(q_corr_hex[i] + "\n")
+        f_delta_phi.write(delta_phi_hex[i] + "\n")
 
     f_i_ideal.close()
     f_q_ideal.close()
@@ -148,6 +157,7 @@ if __name__ == "__main__":
     f_q_raw.close()
     f_i_corr.close()
     f_q_corr.close()
+    f_delta_phi.close()
 
     print "Successfully generated random Zigbee packet with:"
     print "- " + str(zigbeePayloadNbOfBytes) + " bytes payload;"
@@ -157,28 +167,32 @@ if __name__ == "__main__":
     print "-------------------------------------------------"
     print "Output files inside folder ./" + str(folderName) + "/ with " + str(nbOfBits) + " bits resolution."
 
+    plt.subplot(2,1,1)
+    plt.plot(scaled_delta_phi)
+    plt.subplot(2, 1, 2)
+    plt.plot(phaseVector)
+    plt.show()
+    ### PRINT ###
+    print "HEX  BIN              INT"
+    print "-------------------------"
+    for i in range(16):
+        print q_ideal_int[i], q_ideal_bin[i], q_ideal_hex[i]
 
-    #### PRINT ###
-    #print "HEX  BIN              INT"
-    #print "-------------------------"
-    #for i in range(16):
-    #    print i_raw_int[i], i_raw_bin[i], i_raw_hex[i]
-    #
-    #printOffset = 0
-    #printRange = 100
-    #
-    #idealI, = plt.plot(i_ideal_int[printOffset:printOffset + printRange],'b-')
-    #rawI, = plt.plot(i_raw_int[printOffset:printOffset + printRange], 'g-')
-    #corrI, = plt.plot(i_corr_int[printOffset:printOffset + printRange], 'r-')
-    #rawI.set_linewidth(0.5)
-    #plt.axhline(linewidth=2, color='g', y=maxVal)
-    #plt.axhline(linewidth=2, color='g', y=-maxVal)
-    #plt.show()
-    #
-    #idealQ, = plt.plot(q_ideal_int[printOffset:printOffset + printRange], 'b-')
-    #rawQ, = plt.plot(q_raw_int[printOffset:printOffset + printRange], 'g-')
-    #corrQ, = plt.plot(q_corr_int[printOffset:printOffset + printRange], 'r-')
-    #rawQ.set_linewidth(0.5)
-    #plt.axhline(linewidth=2, color='g', y=maxVal)
-    #plt.axhline(linewidth=2, color='g', y=-maxVal)
-    #plt.show()
+    printOffset = 20000
+    printRange = 100
+
+    idealI, = plt.plot(i_ideal_int[printOffset:printOffset + printRange],'b-')
+    rawI, = plt.plot(i_raw_int[printOffset:printOffset + printRange], 'g-')
+    corrI, = plt.plot(i_corr_int[printOffset:printOffset + printRange], 'r-')
+    rawI.set_linewidth(0.5)
+    plt.axhline(linewidth=2, color='g', y=maxVal)
+    plt.axhline(linewidth=2, color='g', y=-maxVal)
+    plt.show()
+
+    idealQ, = plt.plot(q_ideal_int[printOffset:printOffset + printRange], 'b-')
+    rawQ, = plt.plot(q_raw_int[printOffset:printOffset + printRange], 'g-')
+    corrQ, = plt.plot(q_corr_int[printOffset:printOffset + printRange], 'r-')
+    rawQ.set_linewidth(0.5)
+    plt.axhline(linewidth=2, color='g', y=maxVal)
+    plt.axhline(linewidth=2, color='g', y=-maxVal)
+    plt.show()

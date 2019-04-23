@@ -73,7 +73,7 @@ if __name__ == "__main__":
     # payload size in bytes, sample-rate in MHz
     myPacket = ZigBeePacket(8, sampleRate)
     # sample rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
-    myChannel = WirelessChannel(8, 2e6, 30, 10)
+    myChannel = WirelessChannel(8, 200.e3, 0.0, 100)
     receivedMessage = myChannel.receive(myPacket.IQ)
 
     N = myPacket.I.__len__()

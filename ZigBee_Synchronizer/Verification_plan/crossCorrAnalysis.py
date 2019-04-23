@@ -24,7 +24,7 @@ if __name__ == "__main__":
     SNR = 1000.
 
     leadingNoiseSamples = 0
-    trailingNoiseSamples = 0
+    trailingNoiseSamples = 10
 
     # Butterworth low-pass filter
     cutoff = 2.5e6
@@ -165,3 +165,7 @@ if __name__ == "__main__":
     #    plt.axvline(linewidth=1, color='g', x=p)
     #    print p
     #plt.show()
+
+    plt.plot(myPacket.I[0:10], 'o--')
+    plt.plot(myPacket.Q[0:10], 'o--')
+    plt.show()
