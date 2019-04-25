@@ -13,7 +13,7 @@ if __name__ == "__main__":
     zigbeePayloadNbOfBytes = 0
     freqOffset = 0.0
     phaseOffset = 0.0
-    SNR = 6.
+    SNR = 8.
     leadingNoiseSamples = 0
     trailingNoiseSamples = 0
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     tempPlus = 0
     tempMinus = 0
     bits = []
-    for i in range(pltMax):
+    for i in range(gardner.__len__()):
         if (matched[i] > 0.05): tempPlus = tempPlus + 1
         if (matched[i] < 0.05): tempMinus = tempMinus + 1
         if (tempPlus > 6):
@@ -85,8 +85,12 @@ if __name__ == "__main__":
             tempPlus = 0
 
     # ideal bits
-    print [int(myPacket.messageI[i]) for i in range(32)]
+    print [int(myPacket.messageI[i]) for i in range(N/8)]
     # received bits
     print bits[:]
+
+    for i in range(N/8):
+        if bits[i] != int(myPacket.messageI[i]):
+            print "error on index ", i
 
 
