@@ -65,24 +65,3 @@ if __name__ == "__main__":
     plt.plot(idealPhaseKernel)
     plt.plot(recPhase[:512])
     plt.show()
-
-    # matched Filter
-    test = np.correlate(receivedSignal.real, matchedKernel, mode='full')
-    # Gardner
-    test2 = np.zeros(test.__len__())
-    for i in range(test2.__len__() -2):
-        test2[i+1] = (test[i+2] - test[i]) * test[i+1]
-
-    pltMax = 60
-
-    plt.plot(receivedSignal.real[:pltMax], 'b')
-    plt.plot(test[:pltMax], 'g')
-    plt.plot(test2[:pltMax], 'r')
-
-    index = [i for i, j in enumerate(abs(test2[:pltMax])) if j <= 0.5]
-
-    print index
-    for i in range(index.__len__()):
-        plt.axvline(x = index[i], linewidth = 0.5)
-    plt.axhline(y=0)
-    plt.show()

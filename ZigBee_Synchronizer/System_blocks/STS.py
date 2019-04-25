@@ -13,7 +13,7 @@ if __name__ == "__main__":
     zigbeePayloadNbOfBytes = 0
     freqOffset = 0.0
     phaseOffset = 0.0
-    SNR = 8.
+    SNR = 6.
     leadingNoiseSamples = 0
     trailingNoiseSamples = 0
 
@@ -47,23 +47,46 @@ if __name__ == "__main__":
     matchedKernel = [0.0, 0.382683432, 0.707106781, 0.923879533, 1.0, 0.923879533, 0.707106781, 0.382683432, 0.0]
 
     # matched Filter
-    test = np.correlate(receivedSignal.real, matchedKernel, mode='full')
+    matched = np.correlate(receivedSignal.real, matchedKernel, mode='full')
     # Gardner
-    test2 = np.zeros(test.__len__())
-    for i in range(test2.__len__() -2):
-        test2[i+1] = (test[i+2] - test[i]) * test[i+1]
+    gardner = np.zeros(matched.__len__())
+    for i in range(gardner.__len__() -2):
+        gardner[i+1] = (matched[i+2] - matched[i]) * matched[i+1]
 
-    pltMax = 20
+    pltMax = 260
 
-    plt.plot(receivedSignal.real[:pltMax], 'b')
-    plt.plot(test[:pltMax], 'g-x')
-    plt.plot(test2[:pltMax], '-rx')
-    plt.plot(myPacket.I[:pltMax], linewidth = 0.5)
+    rec, = plt.plot(receivedSignal.real[:pltMax], 'b')
+    match, = plt.plot(matched[:pltMax], 'g-x')
+    gard, = plt.plot(gardner[:pltMax], '-rx')
+    ideal, = plt.plot(myPacket.I[:pltMax], linewidth = 0.5)
+    plt.legend([rec, match, gard], ['RECEIVED I', 'MATCHED FILTER OUTPUT', 'GARDNER OUTPUT'])
 
     index = [i for i, j in enumerate(abs(myPacket.I[:pltMax])) if j <= 0.1 or j >= 0.99]
-
-    print index
     for i in range(index.__len__()):
         plt.axvline(x = index[i], linewidth = 0.5)
     plt.axhline(y=0, linewidth = 0.5)
+
     plt.show()
+
+    # new algorithm
+    tempPlus = 0
+    tempMinus = 0
+    bits = []
+    for i in range(pltMax):
+        if (matched[i] > 0.05): tempPlus = tempPlus + 1
+        if (matched[i] < 0.05): tempMinus = tempMinus + 1
+        if (tempPlus > 6):
+            bits.append(1)
+            tempPlus = 0
+            tempMinus = 0
+        if (tempMinus > 6):
+            bits.append(0)
+            tempMinus = 0
+            tempPlus = 0
+
+    # ideal bits
+    print [int(myPacket.messageI[i]) for i in range(32)]
+    # received bits
+    print bits[:]
+
+
