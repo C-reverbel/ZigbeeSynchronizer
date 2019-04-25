@@ -22,7 +22,7 @@ class FrequencyEstimator:
         frequencyNeg = np.arange(-maxFreq, 0, freqStep)
         frequency = np.append(frequencyNeg, self.frequencyPos)
         # apply matched filter on input vector (can use either real or imaginary part)
-        self.rec_convolved = np.convolve(vector.real, self.kernel, mode='full')
+        self.rec_convolved = np.correlate(vector.real, self.kernel, mode='full')
         # take FFT of the square of it
         self.rec_fft = np.fft.fft(self.rec_convolved ** 2)
         # compute frequency offset
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
     zigbeePayloadNbOfBytes = 50
-    freqOffset = 100.0
+    freqOffset = 10000.0
     phaseOffset = 0.0
     SNR = 6.
     # Butterworth low-pass filter
