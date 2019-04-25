@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
-    zigbeePayloadNbOfBytes = 127
-    freqOffset = 0.0
+    zigbeePayloadNbOfBytes = 20
+    freqOffset = 200000.0
     phaseOffset = 0.0
-    SNR = 8.
+    SNR = 10.
     leadingNoiseSamples = 0
     trailingNoiseSamples = 0
 
@@ -47,50 +47,39 @@ if __name__ == "__main__":
     matchedKernel = [0.0, 0.382683432, 0.707106781, 0.923879533, 1.0, 0.923879533, 0.707106781, 0.382683432, 0.0]
 
     # matched Filter
-    matched = np.correlate(receivedSignal.real, matchedKernel, mode='full')
-    # Gardner
-    gardner = np.zeros(matched.__len__())
-    for i in range(gardner.__len__() -2):
-        gardner[i+1] = (matched[i+2] - matched[i]) * matched[i+1]
+    matchedI = np.correlate(receivedSignal.real, matchedKernel, mode='full')
+    matchedQ = np.correlate(receivedSignal.imag, matchedKernel, mode='full')
 
-    pltMax = 100
+    matched = matchedI + 1j * matchedQ
+    matched_ideal = np.correlate(myPacket.I, matchedKernel, mode='full') + 1j * np.correlate(myPacket.Q, matchedKernel, mode='full')
 
-    rec, = plt.plot(receivedSignal.real[:pltMax], 'b')
-    match, = plt.plot(matched[:pltMax], 'g-x')
-    gard, = plt.plot(gardner[:pltMax], '-rx')
-    ideal, = plt.plot(myPacket.I[:pltMax], linewidth = 0.5)
-    plt.legend([rec, match, gard], ['RECEIVED I', 'MATCHED FILTER OUTPUT', 'GARDNER OUTPUT'])
+    matchedI_bin = np.zeros(matchedI.__len__())
+    matchedQ_bin = np.zeros(matchedQ.__len__())
 
-    index = [i for i, j in enumerate(abs(myPacket.I[:pltMax])) if j <= 0.1 or j >= 0.99]
-    for i in range(index.__len__()):
-        plt.axvline(x = index[i], linewidth = 0.5)
-    plt.axhline(y=0, linewidth = 0.5)
+    thres = 1.0
+    for i in range(matchedI.__len__()):
+        matchedI_bin[i] = 1.0 if matchedI[i] > thres else (-1.0 if matchedI[i] < -thres else 0)
+        matchedQ_bin[i] = 1.0 if matchedQ[i] > thres else (-1.0 if matchedQ[i] < -thres else 0)
 
+    matched_bin = matchedI_bin + 1j * matchedQ_bin
+
+    phaseKernel = np.unwrap(np.angle(matched_ideal[4:132]))
+
+
+    maxPlot = 100
+    plt.subplot(2,1,1)
+    plt.plot(myPacket.I[:maxPlot])
+    plt.plot(matchedI[:maxPlot])
+    plt.plot(matched_bin.real[:maxPlot])
+    plt.axhline(y=0,linewidth=0.5)
+    plt.subplot(2, 1, 2)
+    plt.plot(myPacket.Q[:maxPlot])
+    plt.plot(matchedQ[:maxPlot])
+    plt.plot(matched_bin.imag[:maxPlot])
+    plt.axhline(y=0, linewidth=0.5)
     plt.show()
 
-    # new algorithm
-    tempPlus = 0
-    tempMinus = 0
-    bits = []
-    for i in range(gardner.__len__()):
-        if (matched[i] > 0.05): tempPlus = tempPlus + 1
-        if (matched[i] < -0.05): tempMinus = tempMinus + 1
-        if (tempPlus > 6):
-            bits.append(1)
-            tempPlus = 0
-            tempMinus = 0
-        if (tempMinus > 6):
-            bits.append(0)
-            tempMinus = 0
-            tempPlus = 0
+    phaseCorr = np.correlate(np.unwrap(np.angle(matched)), phaseKernel, mode='full')
 
-    # ideal bits
-    print "Expected  = ", [int(myPacket.messageI[i]) for i in range(N/8)]
-    # received bits
-    print "Estimated = ", bits[:]
-
-    for i in range(N/8):
-        if bits[i] != int(myPacket.messageI[i]):
-            print "error on index ", i
-
-
+    plt.plot(phaseCorr[:1000])
+    plt.show()
