@@ -25,7 +25,7 @@ if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
     zigbeePayloadNbOfBytes = 50
-    freqOffset = 20000.0
+    freqOffset = 200000.0
     phaseOffset = 70.0
     SNR = 9.
     leadingNoiseSamples = 0
@@ -51,7 +51,10 @@ if __name__ == "__main__":
     # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
 
-    for i in range(10):
+    totalFail = 0
+    nbOfTests = 200
+    tol = 1
+    for i in range(nbOfTests):
         leadingNoiseSamples = randint(0, 30)
         # receive signal and filter it (change filter order to ZERO to disable filtering)
         receivedSignal = utils.butter_lowpass_filter(
@@ -61,8 +64,16 @@ if __name__ == "__main__":
                             cutoff, fs, order)
 
         sts = TimeSynchronizer(sampleRate)
-
         estimate = sts.estimateDelay(receivedSignal)
+
+
         print "expected  = ", leadingNoiseSamples, \
-            "estimated = ", estimate, \
-            "ok" if estimate == leadingNoiseSamples else "nok"
+            "estimated = ", estimate,
+        if(estimate > leadingNoiseSamples+tol or estimate < leadingNoiseSamples-tol):
+            totalFail = totalFail+1
+            print "NOK"
+        else:
+            print "OK"
+
+
+    print "Total fails = ", totalFail, " of ", nbOfTests
