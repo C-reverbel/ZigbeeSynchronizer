@@ -11,10 +11,10 @@ if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
     zigbeePayloadNbOfBytes = 20
-    freqOffset = 200000.0
+    freqOffset = 10000.0
     phaseOffset = 0.0
     SNR = 10.
-    leadingNoiseSamples = 0
+    leadingNoiseSamples = 30
     trailingNoiseSamples = 0
 
     # Butterworth low-pass filter
@@ -43,43 +43,36 @@ if __name__ == "__main__":
                           trailingNoiseSamples),
         cutoff, fs, order)
 
-
     matchedKernel = [0.0, 0.382683432, 0.707106781, 0.923879533, 1.0, 0.923879533, 0.707106781, 0.382683432, 0.0]
 
-    # matched Filter
-    matchedI = np.correlate(receivedSignal.real, matchedKernel, mode='full')
-    matchedQ = np.correlate(receivedSignal.imag, matchedKernel, mode='full')
+    matched =   np.correlate(receivedSignal.real, matchedKernel, mode='full') + \
+                 1j * np.correlate(receivedSignal.imag,matchedKernel,mode='full')
 
-    matched = matchedI + 1j * matchedQ
-    matched_ideal = np.correlate(myPacket.I, matchedKernel, mode='full') + 1j * np.correlate(myPacket.Q, matchedKernel, mode='full')
+    #Sq = abs(receivedSignal) ** 2
+    #Sd = (Sq[2:-1] - Sq[:-3])
+    #Sd =    receivedSignal.real[1:-2]*(receivedSignal.real[2:-1] - receivedSignal.real[:-3]) \
+    #        + receivedSignal.imag[1:-2]*(receivedSignal.imag[2:-1] - receivedSignal.imag[:-3])
+    Sd = matched.real[1:-2] * (matched.real[2:-1] - matched.real[:-3]) \
+            + matched.imag[1:-2]*(matched.imag[2:-1] - matched.imag[:-3])
+    Et = Sd[2:-3] * (Sd[4:-1] - Sd[:-5])
 
-    matchedI_bin = np.zeros(matchedI.__len__())
-    matchedQ_bin = np.zeros(matchedQ.__len__())
-
-    thres = 1.0
-    for i in range(matchedI.__len__()):
-        matchedI_bin[i] = 1.0 if matchedI[i] > thres else (-1.0 if matchedI[i] < -thres else 0)
-        matchedQ_bin[i] = 1.0 if matchedQ[i] > thres else (-1.0 if matchedQ[i] < -thres else 0)
-
-    matched_bin = matchedI_bin + 1j * matchedQ_bin
-
-    phaseKernel = np.unwrap(np.angle(matched_ideal[4:132]))
-
-
-    maxPlot = 100
-    plt.subplot(2,1,1)
-    plt.plot(myPacket.I[:maxPlot])
-    plt.plot(matchedI[:maxPlot])
-    plt.plot(matched_bin.real[:maxPlot])
-    plt.axhline(y=0,linewidth=0.5)
-    plt.subplot(2, 1, 2)
-    plt.plot(myPacket.Q[:maxPlot])
-    plt.plot(matchedQ[:maxPlot])
-    plt.plot(matched_bin.imag[:maxPlot])
-    plt.axhline(y=0, linewidth=0.5)
+    maxPlot = 50
+    plt.plot(Et[:maxPlot],'bx-')
+    index = np.argmax(Et[:maxPlot])
+    plt.axvline(x = index,color ='k', linewidth=0.5)
     plt.show()
+    print index
 
-    phaseCorr = np.correlate(np.unwrap(np.angle(matched)), phaseKernel, mode='full')
 
-    plt.plot(phaseCorr[:1000])
-    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
