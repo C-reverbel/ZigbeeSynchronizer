@@ -18,17 +18,17 @@ class TimeSynchronizer:
         recPhase = np.unwrap(np.angle(vector))
         correlation = np.correlate(recPhase, self.kernel, mode='full')
         index = np.argmax(correlation[150:280])
-        return index + 150 - 167
+        return index + 150 - 166
 
 
 if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
     zigbeePayloadNbOfBytes = 50
-    freqOffset = 200000.0
-    phaseOffset = 70.0
-    SNR = 9.
-    leadingNoiseSamples = 0
+    freqOffset = 2000.0
+    phaseOffset = 10.0
+    SNR = 7.
+    leadingNoiseSamples = 34
     trailingNoiseSamples = 0
 
     # Butterworth low-pass filter
@@ -52,10 +52,10 @@ if __name__ == "__main__":
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
 
     totalFail = 0
-    nbOfTests = 200
+    nbOfTests = 1
     tol = 1
     for i in range(nbOfTests):
-        leadingNoiseSamples = randint(0, 30)
+        #leadingNoiseSamples = randint(0, 30)
         # receive signal and filter it (change filter order to ZERO to disable filtering)
         receivedSignal = utils.butter_lowpass_filter(
                             myChannel.receive(myPacket.IQ,
@@ -77,3 +77,16 @@ if __name__ == "__main__":
 
 
     print "Total fails = ", totalFail, " of ", nbOfTests
+
+    angle = np.arange(0.0,1.0,0.001)
+    approx = 1.0797 * angle - 0.288 * angle ** 2 - 0.005
+    arc = np.arctan(angle)
+    err = arc-approx
+    plt.subplot(2,1,1)
+    plt.plot(arc)
+    plt.plot(approx)
+    plt.subplot(2,1,2)
+    plt.plot(err)
+    plt.show()
+
+    print np.sum(abs(err))

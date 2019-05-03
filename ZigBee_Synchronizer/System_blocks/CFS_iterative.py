@@ -51,8 +51,8 @@ class CFS_iterative:
         phase = np.zeros(N)
         for i in range(self.samplesOffset, self.nbOfSamples + self.samplesOffset):
             n = i - self.samplesOffset + 1
-            sumX += time[i]
-            sumY += phaseDifference[i]
+            sumX  += time[i]
+            sumY  += phaseDifference[i]
             sumXY += time[i] * phaseDifference[i]
             sumXX += time[i] * time[i]
             if i >= self.estimatorBufferSize:
@@ -99,9 +99,9 @@ if __name__ == "__main__":
     # preamble lasts 1024 samples
     nbOfSamples = 132
     sampleRate = 8
-    freqOffset = 200e3
-    phaseOffset = 300
-    SNR = 10
+    freqOffset = 195.8e3
+    phaseOffset = 0.0
+    SNR = 10.
 
     # 2 bytes payload, 8 MHz sample-rate
     myPacket = ZigBeePacket(127, sampleRate)
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     plt.xlabel("time (us)")
     plt.show()
     # phase difference
-    plt.plot(timeUs[:nbOfSamplesToPlot], phaseDifference[:nbOfSamplesToPlot], '-ko')
+    plt.plot(timeUs[4:nbOfSamplesToPlot], phaseDifference[4:nbOfSamplesToPlot], '-ko')
     plt.title("TRANSMITTED AND RECEIVED PHASE DIFFERENCE")
     plt.ylabel("phase difference (rad)")
     plt.xlabel("time (us)")
