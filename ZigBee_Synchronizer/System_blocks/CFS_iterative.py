@@ -88,26 +88,32 @@ class CFS_iterative:
         return time * freq + phase
     # applies a rotation to each point of 'signal' by corresponding point in 'phase' vector
     def compensatePhase(self, phase, signal):
+        N = phase.__len__()
         cos = np.cos(phase)
         sin = np.sin(phase)
-        resultReal = signal.real * cos + signal.imag * sin
-        resultImag = - signal.real * sin + signal.imag * cos
+        resultReal =   signal.real[:N] * cos + signal.imag[:N] * sin
+        resultImag = - signal.real[:N] * sin + signal.imag[:N] * cos
         result = resultReal + 1j * resultImag
         return result
 
 if __name__ == "__main__":
     # preamble lasts 1024 samples
-    nbOfSamples = 132
+    n = 2
+    nbOfSamples = 132+(n-1)*128#132
     sampleRate = 8
     freqOffset = 195.8e3
     phaseOffset = 0.0
-    SNR = 10.
+    SNR = 80.
+    leadingNoiseSamples = 1
+    trailingNoiseSamples = 0
 
     # 2 bytes payload, 8 MHz sample-rate
     myPacket = ZigBeePacket(127, sampleRate)
+
+    N = myPacket.I.__len__()
     # sample rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
-    receivedMessage = myChannel.receive(myPacket.IQ)
+    receivedMessage = myChannel.receive(myPacket.IQ, leadingNoiseSamples, trailingNoiseSamples)
 
     # adds an offset to the received signal
     off = 0
@@ -119,7 +125,7 @@ if __name__ == "__main__":
     # ideal and received phases
     idealUnwrappedPhase = np.unwrap(np.angle(myPacket.IQ))
     receivedUnwrappedPhase = np.unwrap(np.angle(receivedMessage))
-    phaseDifference = receivedUnwrappedPhase - idealUnwrappedPhase
+    phaseDifference = receivedUnwrappedPhase[:N] - idealUnwrappedPhase
 
     # sample rate (MHz), number of samples - 2 to compute linear regression
     synchronizer = CFS_iterative(sampleRate, nbOfSamples)
@@ -198,28 +204,28 @@ if __name__ == "__main__":
     plt.xlabel("time (us)")
     plt.show()
 
-    # constellation plot: QPSK
-    receivedConstellation, = plt.plot(correctedMessage.real[4::8], np.roll(correctedMessage.imag,-4)[4::8], 'rx')
-    idealConstellation, = plt.plot(myPacket.I[4::8], np.roll(myPacket.Q,-4)[4::8], 'bo')
-    plt.axvline(x=0)
-    plt.axhline(y=0)
-    plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
-    receivedConstellation.set_linewidth(0.1)
-    plt.ylim(-2, 2)
-    plt.xlim(-2, 2)
-    plt.title("QPSK CONSTELLATION - IDEAL VS CORRECTED")
-    plt.show()
-
-    # constellation plot: O-QPSK
-    receivedConstellation, = plt.plot(correctedMessage.real[6:N-2:4], correctedMessage.imag[6:N-2:4], 'rx')
-    idealConstellation, = plt.plot(myPacket.I[6:N-2:4], myPacket.Q[6:N-2:4], 'bo')
-    plt.axvline(x=0)
-    plt.axhline(y=0)
-    plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
-    receivedConstellation.set_linewidth(0.1)
-    plt.ylim(-2, 2)
-    plt.xlim(-2, 2)
-    plt.title("O-QPSK CONSTELLATION - IDEAL VS CORRECTED")
-    plt.show()
+    ## constellation plot: QPSK
+    #receivedConstellation, = plt.plot(correctedMessage.real[4::8], np.roll(correctedMessage.imag,-4)[4::8], 'rx')
+    #idealConstellation, = plt.plot(myPacket.I[4::8], np.roll(myPacket.Q,-4)[4::8], 'bo')
+    #plt.axvline(x=0)
+    #plt.axhline(y=0)
+    #plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
+    #receivedConstellation.set_linewidth(0.1)
+    #plt.ylim(-2, 2)
+    #plt.xlim(-2, 2)
+    #plt.title("QPSK CONSTELLATION - IDEAL VS CORRECTED")
+    #plt.show()
+    #
+    ## constellation plot: O-QPSK
+    #receivedConstellation, = plt.plot(correctedMessage.real[6:N-2:4], correctedMessage.imag[6:N-2:4], 'rx')
+    #idealConstellation, = plt.plot(myPacket.I[6:N-2:4], myPacket.Q[6:N-2:4], 'bo')
+    #plt.axvline(x=0)
+    #plt.axhline(y=0)
+    #plt.legend([idealConstellation, receivedConstellation], ['IDEAL CONSTELLATION', 'CORRECTED CONSTELLATION'], loc=3)
+    #receivedConstellation.set_linewidth(0.1)
+    #plt.ylim(-2, 2)
+    #plt.xlim(-2, 2)
+    #plt.title("O-QPSK CONSTELLATION - IDEAL VS CORRECTED")
+    #plt.show()
 
 

@@ -12,23 +12,38 @@ class TimeSynchronizer:
     def __init__(self, sampleRate):
         self.sampleRate = sampleRate
         packet = ZigBeePacket(0, self.sampleRate)
-        self.kernel = np.unwrap(np.angle(packet.IQ[4:37]))
+        self.kernel = np.unwrap(np.angle(packet.IQ[10:15]))#tot = 5
+        #self.kernel = np.unwrap(np.angle(packet.IQ[5:37]))#tot = 32
+        print self.kernel.__len__()
+        plt.plot(self.kernel, '-x')
+        plt.show()
 
     def estimateDelay(self, vector):
         recPhase = np.unwrap(np.angle(vector))
-        correlation = np.correlate(recPhase, self.kernel, mode='full')
-        index = np.argmax(correlation[150:280])
-        return index + 150 - 166
+        self.correlation = np.correlate(recPhase, self.kernel, mode='full')
+        #start = 150
+        start = 140
+        range = 35
+        #range = 100
+        index = np.argmax(self.correlation[start:start + range])
+        plt.plot(sts.correlation[:start+range])
+        plt.axvline(x=start)
+        plt.axvline(x=start+range)
+        plt.axvline(x=index + start, color='r')
+        plt.show()
+
+        return index + start - 142
+        #return index + start - 167 # 150 - 200
 
 
 if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
-    zigbeePayloadNbOfBytes = 50
-    freqOffset = 2000.0
-    phaseOffset = 10.0
+    zigbeePayloadNbOfBytes = 0
+    freqOffset = -200000.0
+    phaseOffset = 0.0
     SNR = 7.
-    leadingNoiseSamples = 34
+    leadingNoiseSamples = 14
     trailingNoiseSamples = 0
 
     # Butterworth low-pass filter
@@ -51,11 +66,12 @@ if __name__ == "__main__":
     # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
     myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
 
+    nbOfTests = 5
     totalFail = 0
-    nbOfTests = 1
     tol = 1
     for i in range(nbOfTests):
-        #leadingNoiseSamples = randint(0, 30)
+        #leadingNoiseSamples = randint(0, 14)
+        #leadingNoiseSamples = randint(0, 55)
         # receive signal and filter it (change filter order to ZERO to disable filtering)
         receivedSignal = utils.butter_lowpass_filter(
                             myChannel.receive(myPacket.IQ,
@@ -76,17 +92,24 @@ if __name__ == "__main__":
             print "OK"
 
 
+
     print "Total fails = ", totalFail, " of ", nbOfTests
 
-    angle = np.arange(0.0,1.0,0.001)
-    approx = 1.0797 * angle - 0.288 * angle ** 2 - 0.005
-    arc = np.arctan(angle)
-    err = arc-approx
-    plt.subplot(2,1,1)
-    plt.plot(arc)
-    plt.plot(approx)
-    plt.subplot(2,1,2)
-    plt.plot(err)
-    plt.show()
 
-    print np.sum(abs(err))
+
+
+    #plt.plot(np.unwrap(np.angle(myPacket.IQ[4:132])))
+    #plt.show()
+
+    #angle = np.arange(0.0,1.0,0.001)
+    #approx = 1.0797 * angle - 0.288 * angle ** 2 - 0.005
+    #arc = np.arctan(angle)
+    #err = arc-approx
+    #plt.subplot(2,1,1)
+    #plt.plot(arc)
+    #plt.plot(approx)
+    #plt.subplot(2,1,2)
+    #plt.plot(err)
+    #plt.show()
+    #
+    #print np.sum(abs(err))
