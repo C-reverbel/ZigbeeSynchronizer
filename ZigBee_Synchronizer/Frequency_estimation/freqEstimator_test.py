@@ -13,9 +13,9 @@ class TimeSynchronizer:
         self.sampleRate = sampleRate
         packet = ZigBeePacket(0, self.sampleRate)
         #self.kernel = np.unwrap(np.angle(packet.IQ[10:18]))#tot = 5
-        self.kernel = np.unwrap(np.angle(packet.IQ[124:140]))#tot = 32
+        #self.kernel = np.unwrap(np.angle(packet.IQ[124:140]))#tot = 32
         #self.kernel = np.unwrap(np.angle(packet.IQ[116:133]))  # tot = 32
-        #self.kernel = [0., 0., 0., 0., np.pi/2, 0., 0., 0., 0., 0., 0., 0., -np.pi/2, 0., 0., 0., 0.]
+        self.kernel = [0., 0., 0., 0., np.pi/2, 0., 0., 0., 0., 0., 0., 0., -np.pi/2, 0., 0., 0., 0.]
 
     def estimateDelay(self, vector):
         recPhase = np.unwrap(np.angle(vector))
@@ -64,11 +64,11 @@ if __name__ == "__main__":
         estimate = sts.estimateDelay(receivedSignal)
         print estimate
         plt.plot(sts.correlation[:500])
-        plt.axvline(x=sts.index+sts.start, linewidth=0.5)
+        #plt.axvline(x=sts.index+sts.start, linewidth=0.5)
 
-    plt.axvline(x=sts.start, color='k')
-    plt.axvline(x=leadingNoiseSamples, color='k')
-    plt.axvline(x=sts.start + sts.range, color='k')
+    #plt.axvline(x=sts.start, color='k')
+    #plt.axvline(x=leadingNoiseSamples, color='k')
+    #plt.axvline(x=sts.start + sts.range, color='k')
     plt.show()
 
     plt.plot(sts.kernel, '-bx')
