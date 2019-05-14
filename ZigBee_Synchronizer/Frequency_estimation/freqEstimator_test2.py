@@ -16,7 +16,7 @@ class TimeSynchronizer:
         #self.kernel = np.unwrap(np.angle(packet.IQ[124:140]))#tot = 32
         #self.kernel = np.unwrap(np.angle(packet.IQ[116:133]))  # tot = 32
         #self.kernel = [0., 0., 0., 0., np.pi/2, 0., 0., 0., 0., 0., 0., 0., -np.pi/2, 0., 0., 0., 0.]
-        self.kernel = [np.pi / 2, 0., 0., 0., 0., 0., 0., 0., -np.pi / 2]
+        self.kernel = [1, 0., 0., 0., 0., 0., 0., 0., -1]
 
     def estimateDelay(self, vector):
         self.recPhase = np.unwrap(np.angle(vector))
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     sampleRate = 8
     zigbeePayloadNbOfBytes = 0
     freqOffset = 200000.0
-    phaseOffset = 0.0
+    phaseOffset = 170.0
     SNR = 7.
     leadingNoiseSamples = 0
     trailingNoiseSamples = 0
@@ -57,6 +57,7 @@ if __name__ == "__main__":
     tol = 2
     for i in range(200):
         leadingNoiseSamples = randint(0,28)
+        phaseOffset = float(randint(0,360))
         ## CHANNEL
         # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
         myChannel = WirelessChannel(sampleRate,  freqOffset, phaseOffset, SNR)
@@ -79,11 +80,11 @@ if __name__ == "__main__":
         high = 100
         corrRange = 149
 
-        max = 0
+        max = -1000
         maxIndex = 0
         for i in range(high - low):
             temp = sts2.correlation[low + i]
-            if (temp > max and maxIndex + 25 > i):
+            if (temp > max and maxIndex + 26 > i):
                 max = temp
                 maxIndex = i
         index = maxIndex + low
@@ -94,6 +95,12 @@ if __name__ == "__main__":
             pass
         else:
             count = count + 1
+
+        #plt.plot(sts2.correlation[:corrRange], '-x')
+        #plt.axvline(x=low, color='k')
+        #plt.axvline(x=high, color='k')
+        #plt.axvline(x=index, color='r')
+        #plt.show()
 
         #plt.subplot(2, 1, 1)
         #plt.plot(sts1.correlation[:corrRange],'-x')
@@ -106,10 +113,3 @@ if __name__ == "__main__":
         #plt.axvline(x=index2, color='r')
     #plt.show()
     print count
-
-
-    plt.plot(sts2.correlation[:corrRange],'-x')
-    plt.axvline(x=low, color='k')
-    plt.axvline(x=high, color='k')
-    plt.axvline(x=index, color='r')
-    plt.show()
