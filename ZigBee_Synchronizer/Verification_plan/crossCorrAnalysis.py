@@ -18,13 +18,13 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     # Zigbee packet
     sampleRate = 8
-    zigbeePayloadNbOfBytes = 127
-    freqOffset = 10.
-    phaseOffset =160.
-    SNR = 1000.
+    zigbeePayloadNbOfBytes = 5
+    freqOffset = 2000.
+    phaseOffset = 0.
+    SNR = 8.
 
     leadingNoiseSamples = 0
-    trailingNoiseSamples = 10
+    trailingNoiseSamples = 0
 
     # Butterworth low-pass filter
     cutoff = 2.5e6
@@ -58,34 +58,6 @@ if __name__ == "__main__":
     instPhase = np.zeros(N_ext)
     instPhase[::] = phaseVector[::]
 
-    # ## demodulated signals
-    # receivedBits = np.sign(receivedSignal.real) + 1j * np.sign(receivedSignal.imag)
-    # idealBits = np.sign(myPacket.IQ.real) + 1j * np.sign(myPacket.IQ.imag)
-    # idealNoisyBits = np.sign(idealReceivedSignal.real) + 1j * np.sign(idealReceivedSignal.imag)
-
-    ############################### PLOT ########################################################
-
-    # # correlation plot
-    # NormalizationCte = float(abs(np.correlate(myPacket.IQ, myPacket.IQ)))
-    # nbPointsToPlot = 20
-    # corrIdeal   = utils.correlate(idealReceivedSignal, myPacket.IQ, nbPointsToPlot, NormalizationCte)
-    # corrRec     = utils.correlate(receivedSignal     , myPacket.IQ, nbPointsToPlot, NormalizationCte)
-    # corrCorr    = utils.correlate(correctedSignal    , myPacket.IQ, nbPointsToPlot, NormalizationCte)
-    # ideal, = plt.plot(corrIdeal, 'c--')
-    # rec, = plt.plot(corrRec, 'kx-')
-    # corr, = plt.plot(corrCorr, 'b')
-    # plt.legend([ideal, rec, corr], ['IDEAL', 'NON-CORRECTED', 'CPS'], loc=1)
-    # ideal.set_linewidth(4)
-    # corr.set_linewidth(2)
-    # plt.axhline(linewidth=2, color='g', y=0.95)
-    # plt.ylim(0, 1)
-    # plt.xlim(0, nbPointsToPlot)
-    # plt.grid(b=None, which='major', axis='y')
-    # plt.title("CORRELATION PLOT\n - SNR: " + str(SNR) + "dB - FreqOffset: " + str(freqOffset) + "Hz - PhaseOffset: " + str(phaseOffset) + "Deg")
-    # plt.ylabel("NORMALIZED AMPLITUDE")
-    # plt.xlabel("SAMPLES")
-    # plt.show()
-
     # bits correlation
     NormalizationCte = float(abs(np.correlate(myPacket.I, myPacket.I)))
     nbPointsToPlot = 100
@@ -114,22 +86,6 @@ if __name__ == "__main__":
     plt.xlabel("SAMPLES")
     plt.show()
 
-    # # time domain plot
-    # offset = 100
-    # numberPoints = 100
-    # samples = range(offset, offset + numberPoints)
-    # I_rec, = plt.plot(samples, receivedSignal.real[offset:offset + numberPoints], 'b')
-    # Q_rec, = plt.plot(samples, receivedSignal.imag[offset:offset + numberPoints], 'r')
-    # I_ideal, = plt.plot(samples, idealReceivedSignal.real[offset:offset + numberPoints], 'c--')
-    # Q_ideal, = plt.plot(samples, idealReceivedSignal.imag[offset:offset + numberPoints], '--', color='orange')
-    # plt.legend([I_ideal, Q_ideal, I_rec, Q_rec], \
-    #            ['I', 'Q', 'I REC', 'Q REC'], loc=3)
-    # plt.title("TIME DOMAIN IN-PHASE SIGNAL\n - SNR: " + str(SNR) + "dB - FreqOffset: " + str(freqOffset) + "Hz - PhaseOffset: " + str(phaseOffset) + "Deg")
-    # plt.ylabel("Amplitude (Volts)")
-    # plt.xlabel("samples")
-    # plt.axhline(y=0, color='k')
-    # plt.show()
-    #
     # plot phase differences
     plt.yticks(np.arange(-50, 50, 1))
     if leadingNoiseSamples == 0 and trailingNoiseSamples == 0:
@@ -157,15 +113,3 @@ if __name__ == "__main__":
     plt.xlabel("TIME (ms)")
     plt.show()
 
-
-    #samplToPlot = 20
-    #plt.plot(time[0:samplToPlot]*1000, myPacket.I[0:samplToPlot], 'x--')
-    #plt.plot(time[0:samplToPlot] * 1000, myPacket.Q[0:samplToPlot], 'o--')
-    #for p in np.arange(0, samplToPlot * 125e-6, 125e-6):
-    #    plt.axvline(linewidth=1, color='g', x=p)
-    #    print p
-    #plt.show()
-
-    plt.plot(myPacket.I[0:10], 'o--')
-    plt.plot(myPacket.Q[0:10], 'o--')
-    plt.show()

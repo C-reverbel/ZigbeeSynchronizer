@@ -11,14 +11,18 @@ from random import randint
 class TimeSynchronizer:
     def __init__(self, sampleRate):
         self.sampleRate = sampleRate
-        #self.kernel = [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1]
-        #self.kernel = [1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, -1, 0, -1, 0, -1, 0]
-        #self.kernel = [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, -1]
-        #self.kernel = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1]
         self.kernel = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1]
         self.Nk = self.kernel.__len__()
+        self.goldDelay = 9
+        self.computeRange = 128
 
-    def estimateDelay(self, vector, startSample, size):
+    def getSyncPhase(self, vector, startSample, phaseSize):
+        estDelay = self._estimateDelay(vector, startSample, self.computeRange)
+        start = startSample + estDelay - self.goldDelay
+        end = start + phaseSize
+        return self.recPhase[start:end]
+
+    def _estimateDelay(self, vector, startSample, size):
         self.recPhase = np.unwrap(np.angle(vector))
         self.correlation = []
         for i in range(size):
@@ -74,13 +78,14 @@ if __name__ == "__main__":
 
         # sts
         sts = TimeSynchronizer(sampleRate)
-        estimate = sts.estimateDelay(receivedSignal, startSample, 128)
+        recPhase = sts.getSyncPhase(receivedSignal, startSample, 149)
+        estimate = sts._estimateDelay(receivedSignal, startSample, 128)
         sts_start = startSample
         sts_end = sts_start + 128
 
         gold = 9
         idealPhase = np.unwrap(np.angle(myPacket.IQ[4:132 + 21]))
-        recPhase = sts.recPhase[sts_start + estimate - gold:sts_start + estimate - gold + 149]
+        #recPhase = sts.recPhase[sts_start + estimate - gold:sts_start + estimate - gold + 149]
 
         if(DEBUG):
             plt.subplot(3, 1, 1)
@@ -95,9 +100,8 @@ if __name__ == "__main__":
             plt.axvline(x=sts.index, color='r')
             plt.show()
 
-
             plt.subplot(3, 1, 1)
-            plt.plot(sts.recPhase[sts_start:sts_end])
+            plt.plot(sts.recPhase[sts_start:sts_end],'-x')
             plt.axvline(x=estimate, color='r')
             plt.subplot(3, 1, 2)
             plt.plot(recPhase)
@@ -119,6 +123,6 @@ if __name__ == "__main__":
     if not DEBUG:
         plt.hist(err,range=[-2000,2000])
         plt.show()
-
-
+    plt.plot(np.unwrap(np.angle(myPacket.IQ[4:132])))
+    plt.show()
 

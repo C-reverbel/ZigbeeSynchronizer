@@ -15,11 +15,12 @@ class TimeSynchronizer:
         #self.kernel = np.unwrap(np.angle(packet.IQ[10:18]))#tot = 5
         #self.kernel = np.unwrap(np.angle(packet.IQ[124:140]))#tot = 32
         #self.kernel = np.unwrap(np.angle(packet.IQ[116:133]))  # tot = 32
-        self.kernel = [0., 0., 0., 0., np.pi/2, 0., 0., 0., 0., 0., 0., 0., -np.pi/2, 0., 0., 0., 0.]
+        ##self.kernel = [0., 0., 0., 0., np.pi/2, 0., 0., 0., 0., 0., 0., 0., -np.pi/2, 0., 0., 0., 0.]
+        self.kernel = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1]
 
     def estimateDelay(self, vector):
-        recPhase = np.unwrap(np.angle(vector))
-        self.correlation = np.correlate(recPhase, self.kernel, mode='full')
+        self.recPhase = np.unwrap(np.angle(vector))
+        self.correlation = np.correlate(self.recPhase, self.kernel, mode='full')
         #start = 150
         self.start = 102#142
         self.range = 28#35
@@ -37,7 +38,7 @@ if __name__ == "__main__":
     freqOffset = -200000.0
     phaseOffset = 0.0
     SNR = 900.
-    leadingNoiseSamples = 15
+    leadingNoiseSamples = 0
     trailingNoiseSamples = 0
 
     print "Zigbee payload size = " + str(zigbeePayloadNbOfBytes) + " bytes"
@@ -63,14 +64,24 @@ if __name__ == "__main__":
         sts = TimeSynchronizer(sampleRate)
         estimate = sts.estimateDelay(receivedSignal)
         print estimate
-        plt.plot(sts.correlation[:500])
+        plt.plot(sts.correlation[:300])
+        #plt.plot(sts.recPhase[:300])
+
         #plt.axvline(x=sts.index+sts.start, linewidth=0.5)
 
-    #plt.axvline(x=sts.start, color='k')
-    #plt.axvline(x=leadingNoiseSamples, color='k')
-    #plt.axvline(x=sts.start + sts.range, color='k')
+    #plt.xlabel("samples")
+    #plt.ylabel("rad")
+    #plt.title("Unwrapped Phase")
+    #plt.legend(["-200 kHz", "0 kHz", "200 kHz"])
+    #plt.axvline(x=4, color='k')
+    #plt.axvline(x=132,color='k')
+    #plt.axvline(x=132+128, color='k')
+    #plt.show()
+
+    plt.xlabel("samples")
+    plt.title("Correlated Signal")
+    plt.legend(["-200 kHz", "0 kHz", "200 kHz"])
     plt.show()
 
-    plt.plot(sts.kernel, '-bx')
-    plt.show()
+
 
