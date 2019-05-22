@@ -61,9 +61,12 @@ class CPS:
     def _computeFilterParameters(self, freq, sampleRate):
         Wc = 2 * np.pi * freq
         Ts = 1e-6 / sampleRate
-        C1 = (2 - Wc * Ts) / (2 + Wc * Ts)
-        C2 = (Wc * Ts) / (2 + Wc * Ts)
-        return C1, C2
+        self.C1 = (2 - Wc * Ts) / (2 + Wc * Ts)
+        self.C2 = (Wc * Ts) / (2 + Wc * Ts)
+
+        #self.C1 = 1.0
+        #self.C2 = 0.00024414
+        return self.C1, self.C2
 
     def _compensatePhase(self, phase, signal):
         return np.exp(-1j * phase) * signal
