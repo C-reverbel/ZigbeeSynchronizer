@@ -17,22 +17,22 @@ from random import randint
 
 
 if __name__ == "__main__":
-    DEBUG = 1
+    DEBUG = 0
     errCount = 0
-    number_of_tests = 1
+    number_of_tests = 50
     for j in range(number_of_tests):
         # Zigbee packet
         sampleRate = 8
         if(DEBUG):
-            zigbeePayloadNbOfBytes = 5
-            freqOffset = 1000.
-            phaseOffset = 0.
-            SNR = 10.
-        else:
             zigbeePayloadNbOfBytes = 127
             freqOffset = 500.
+            phaseOffset = 0.
+            SNR = 7.
+        else:
+            zigbeePayloadNbOfBytes = 127
+            freqOffset = 1000.
             phaseOffset = float(randint(0,360))
-            SNR = 8.
+            SNR = 7.
 
         leadingNoiseSamples = 0
         trailingNoiseSamples = 0
@@ -46,12 +46,11 @@ if __name__ == "__main__":
         # channel
         myChannel1 = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
         receivedSignal = myChannel1.receive(myPacket.IQ, leadingNoiseSamples, trailingNoiseSamples)
-
         N_ext = receivedSignal.real.__len__()
         ## receiver
         # CPS
         synchronizer2 = CPS(sampleRate)
-        correctedSignal, phaseVector, correctedBits = synchronizer2.costasLoop(2000, receivedSignal)
+        correctedSignal, phaseVector, correctedBits = synchronizer2.costasLoop(850000., receivedSignal)
         # final instantaneous phase error estimated
         instPhase = np.zeros(N_ext)
         instPhase[::] = phaseVector[::]
@@ -61,8 +60,8 @@ if __name__ == "__main__":
         nbPointsToPlot = 20
         if(DEBUG):
             corrIdeal = utils.correlate(myPacket.I, myPacket.I, nbPointsToPlot, NormalizationCte)
-            recII  = utils.correlate(receivedSignal.real, myPacket.I,nbPointsToPlot, NormalizationCte)
-            recIQ  = utils.correlate(receivedSignal.real, myPacket.Q,nbPointsToPlot, NormalizationCte)
+            recII     = utils.correlate(receivedSignal.real, myPacket.I,nbPointsToPlot, NormalizationCte)
+            recIQ     = utils.correlate(receivedSignal.real, myPacket.Q,nbPointsToPlot, NormalizationCte)
         corrII = utils.correlate(correctedSignal.real, myPacket.I, nbPointsToPlot, NormalizationCte)
         corrIQ = utils.correlate(correctedSignal.real, myPacket.Q, nbPointsToPlot, NormalizationCte)
 
@@ -72,8 +71,6 @@ if __name__ == "__main__":
         maxMax = np.maximum(maxII,maxIQ)
         if(maxMax < threshold): errCount += 1
 
-
-
         if(DEBUG):
             # time vector
             maxTime = (1e-6 / sampleRate) * N
@@ -81,6 +78,13 @@ if __name__ == "__main__":
             time = np.arange(0, maxTime, timeStep)
 
             print synchronizer2.C1, synchronizer2.C2
+            plotStart = 20000
+            plotRange = 200
+
+
+            plt.plot(correctedSignal.real[plotStart:plotStart+plotRange])
+            plt.plot(myPacket.IQ.real[plotStart:plotStart + plotRange])
+            plt.show()
 
 
             # instantaneous phase error
@@ -110,7 +114,7 @@ if __name__ == "__main__":
             # plot phase differences
             plt.yticks(np.arange(-50, 50, 1))
             if leadingNoiseSamples == 0 and trailingNoiseSamples == 0:
-                phaseDifference = np.unwrap(np.angle(correctedSignal)) - np.unwrap(np.angle(myPacket.IQ))
+                phaseDifference = np.unwrap(np.angle(correctedSignal[:N])) - np.unwrap(np.angle(myPacket.IQ))
             else:
                 phaseDifference = np.unwrap(np.angle(correctedSignal[leadingNoiseSamples:-trailingNoiseSamples])) - np.unwrap(np.angle(myPacket.IQ))
             phaseNoiseCPS, = plt.plot(1e3 * time, phaseDifference * 2 / np.pi, 'b')

@@ -15,7 +15,7 @@ if __name__ == "__main__":
     DEBUG = 0
     err = []
     errCount = 0
-    number_of_tests = 1
+    number_of_tests = 100
     for j in range(number_of_tests):
         # Zigbee packet
         sampleRate = 8
@@ -28,7 +28,7 @@ if __name__ == "__main__":
             zigbeePayloadNbOfBytes = randint(5,127)
             freqOffset = float(randint(-200000,200000))
             phaseOffset = 0.0#float(randint(0,360))
-            SNR = 10.
+            SNR = 8.
         leadingNoiseSamples = 0
         trailingNoiseSamples = 0
 
@@ -81,8 +81,8 @@ if __name__ == "__main__":
 
         # PRINTS
         # Ideal I and Q messages (payload only)
-        I = [2*int(i)-1 for i in myPacket.messageI[192:]]
-        Q = [2*int(q)-1 for q in myPacket.messageQ[192:]]
+        I = [int(i) for i in myPacket.messageI[192:]]
+        Q = [int(q) for q in myPacket.messageQ[192:]]
 
 
         if(DEBUG):
@@ -109,7 +109,3 @@ if __name__ == "__main__":
             print "Qe = ", Q_est, '\n'
     print "============================="
     print "TOTAL ERRORS = ", errCount, "/", number_of_tests
-
-
-    print myPacket.messageI[:32]
-    print myPacket.messageQ[:32]

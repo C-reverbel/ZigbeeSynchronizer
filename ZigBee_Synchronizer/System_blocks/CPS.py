@@ -20,6 +20,7 @@ class CPS:
     def __init__(self, sampleRate):
         self.sampleRate = sampleRate
         self.myPacket = ZigBeePacket(1, sampleRate)
+        self.K = 0.03125#0.0625
 
     def costasLoop(self, freq, vector):
         temp = vector.copy()
@@ -27,6 +28,13 @@ class CPS:
         phaseVect = np.zeros(N)
         sign = np.zeros(N) + 1j * np.zeros(N)
         phase = 0
+
+        d_phi = []
+
+        ## TEST ##
+        kernel = [1]
+        corr = np.correlate(temp.real, kernel,mode='full') + 1j * np.correlate(temp.imag, kernel,mode='full')
+        temp = corr
 
         # loop filter variables
         last, last_old, deltaPhi_old = 0, 0, 0
@@ -36,19 +44,22 @@ class CPS:
             y_i = temp.real[i-self.sampleRate/2]
             y_q = temp.imag[i]
             # compute phase error
-            signI = np.sign(temp.real[i-self.sampleRate/2])
-            signQ = np.sign(temp.imag[i])
+            signI = np.sign(y_i)
+            signQ = np.sign(y_q)
+            #signI = np.sign(corr.real[i+1-self.sampleRate/2])
+            #signQ = np.sign(corr.imag[i+1])
             deltaPhi = y_q * signI - y_i * signQ
             # loop filter
             last, last_old, deltaPhi_old = self._iterativeLowPassFilter(freq, last, last_old, deltaPhi, deltaPhi_old)
             # constant value empirically tested :p
-            phase += (0.0625 * last)
+            phase += (self.K * last)
             phase = phase % (2 * np.pi)
             phase = phase if phase < np.pi else (phase - 2 * np.pi)
             # also return phase and signal for debug only
             phaseVect[i] = phase
             sign[i] = signI + 1j*signQ
-        return temp, phaseVect, sign
+            d_phi.append(deltaPhi)
+        return temp, phaseVect, d_phi
 
     def _iterativeLowPassFilter(self, cutoffFrequency, y, y_old, x, x_old):
         C1, C2 = self._computeFilterParameters(cutoffFrequency, self.sampleRate)
@@ -58,6 +69,7 @@ class CPS:
         x_old = x
         y_old = y
         return y, y_old, x_old
+        #return x, x, x
     def _computeFilterParameters(self, freq, sampleRate):
         Wc = 2 * np.pi * freq
         Ts = 1e-6 / sampleRate
@@ -70,6 +82,7 @@ class CPS:
 
     def _compensatePhase(self, phase, signal):
         return np.exp(-1j * phase) * signal
+        #return signal
 
 if __name__ == "__main__":
     # Zigbee packet

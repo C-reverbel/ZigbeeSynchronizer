@@ -42,9 +42,10 @@ class SymbolDetector:
         I_est = [-1 for i in range(N)]
         Q_est = [-1 for i in range(N)]
         for i in range(N):
-            I_est[i] = 2*int(outI[1+i])-1
-            Q_est[i] = 2*int(outQ[1+i])-1
+            I_est[i] = int(outI[1+i])
+            Q_est[i] = int(outQ[1+i])
         return I_est, Q_est
+
 
 if __name__ == "__main__":
     DEBUG = 1
@@ -57,7 +58,7 @@ if __name__ == "__main__":
         if(DEBUG):
             freqOffset = 0.0
             phaseOffset = 0.0
-            SNR = 700.
+            SNR = 7.
         else:
             freqOffset = 0.0#float(randint(-200000,200000))
             phaseOffset = 0.0#float(randint(0,360))
@@ -83,8 +84,8 @@ if __name__ == "__main__":
         receivedSignal = myChannel.receive(myPacket.IQ, leadingNoiseSamples, trailingNoiseSamples)
 
         # Ideal I and Q messages
-        I = [2*int(i)-1 for i in myPacket.messageI]
-        Q = [2*int(q)-1 for q in myPacket.messageQ]
+        I = [int(i) for i in myPacket.messageI]
+        Q = [int(q) for q in myPacket.messageQ]
         N = I.__len__()
 
         SD = SymbolDetector(8)
@@ -92,6 +93,12 @@ if __name__ == "__main__":
 
         errI = 0
         errQ = 0
+
+        plt.plot(receivedSignal.real[:100],'-x')
+        plt.plot(SD.corrI[:100],'-x')
+        plt.axhline(y=0)
+        plt.show()
+
 
         for i in range(N):
             if I[i] != I_est[i]:
@@ -108,10 +115,9 @@ if __name__ == "__main__":
             print "Q  = ",Q
             print "Qe = ", Q_est, '\n'
 
-
         if(DEBUG):
-            plotMin = 0
-            rang = 100
+            plotMin = 2500
+            rang = 60
             plotMax = rang + plotMin
             plt.plot(SD.corrQ[plotMin:plotMax])
             plt.plot(SD.satQ[plotMin:plotMax],'x')
