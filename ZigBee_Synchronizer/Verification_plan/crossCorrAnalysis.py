@@ -19,20 +19,20 @@ from random import randint
 if __name__ == "__main__":
     DEBUG = 0
     errCount = 0
-    number_of_tests = 50
+    number_of_tests = 1000
     for j in range(number_of_tests):
         # Zigbee packet
         sampleRate = 8
         if(DEBUG):
             zigbeePayloadNbOfBytes = 127
-            freqOffset = 500.
+            freqOffset = 1000.
             phaseOffset = 0.
             SNR = 7.
         else:
             zigbeePayloadNbOfBytes = 127
             freqOffset = 1000.
             phaseOffset = float(randint(0,360))
-            SNR = 7.
+            SNR = 9.
 
         leadingNoiseSamples = 0
         trailingNoiseSamples = 0

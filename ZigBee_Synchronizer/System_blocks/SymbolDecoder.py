@@ -104,8 +104,37 @@ chip2Symbol = {
 } # formatted in MSB first
 
 class SymbolDecoder:
-    def __init__(self, payloadNbOfBytes, sampleRate):
+    def __init__(self, sampleRate):
         pass
+
+    
+    def _mapToBytes(self,symbolsList):
+        result = []
+        for i in range(len(symbolsList) / 2):
+            temp = symbolsList[2 * i:2 * i + 2]
+            temp = "".join([str(j) for j in temp])
+            result.append(temp)
+        print result
+    def _mapToSymbols(self,chipList):
+        result = [chip2Symbol[j] for j in chipList]
+        return result
+    def _groupIn32(self,vect):
+        result = []
+        for i in range(len(vect)/32):
+            temp = vect[32*i:32*i+32]
+            temp = "".join([str(j) for j in temp])
+            result.append(temp)
+        return result
+    def _mergeIQ(self,I,Q):
+        result = []
+        for i in range(len(I)):
+            result.append(I[i])
+            result.append(Q[i])
+        return result
+    def _chipToSymbol(self,chip):
+        pass
+
+
 
 
 if __name__ == "__main__":
@@ -115,10 +144,10 @@ if __name__ == "__main__":
     for j in range(number_of_tests):
         # Zigbee packet
         sampleRate = 8
-        zigbeePayloadNbOfBytes = 127
+        zigbeePayloadNbOfBytes = 0
         if (DEBUG):
             freqOffset = 0.0
-            phaseOffset = 0.0
+            phaseOffset = 90.0
             SNR = 6000.
         else:
             freqOffset = 0.0  # float(randint(-200000,200000))
@@ -138,38 +167,63 @@ if __name__ == "__main__":
         # payload in bytes, sample-rate in MHz
         myPacket = ZigBeePacket(zigbeePayloadNbOfBytes, sampleRate)
 
-        start = 0
-        rang = 32
-        end = start + rang
+        ## CHANNEL
+        # sample-rate (MHz), frequency offset (Hz), phase offset (degrees), SNR (db)
+        myChannel = WirelessChannel(sampleRate, freqOffset, phaseOffset, SNR)
+        receivedSignal = myChannel.receive(myPacket.IQ, leadingNoiseSamples, trailingNoiseSamples)
 
-        strr = "1111"
-        temp = myPacket.symbolToChip([strr,strr])
+        ## Symbol Detector
+        SDetect = SymbolDetector(sampleRate)
+        I_est, Q_est = SDetect.detect(receivedSignal[:])  # take only the payload 1536:
 
-        I = temp[start:end][0::2]
-        Q = temp[start:end][1::2]
-        I_inv = [str(1 - int(i)) for i in temp[start:end][0::2]]
-        I_inv = "".join(I_inv)
-        Q_inv = [str(1 - int(i)) for i in temp[start:end][1::2]]
-        Q_inv = "".join(Q_inv)
+        ## Symbol Decoder
+        SDecoder = SymbolDecoder(sampleRate)
+        #SDecoder._mapToBytes(SDecoder._mapToSymbols(SDecoder._groupIn32(SDecoder._mergeIQ(I_est,Q_est))))
 
-        print " I = ",I
-        print "-I = ",I_inv
-        print " Q = ",Q
-        print "-Q = ",Q_inv
 
-        IQ   = ""
-        _I_Q = ""
-        Q_I  = ""
-        _QI  = ""
-        for i in range(len(I)):
-            IQ   += I[i]     + Q[i]
-            _I_Q += I_inv[i] + Q_inv[i]
-            Q_I  += Q[i]     + I_inv[i]
-            _QI  += Q_inv[i] + I[i]
+        #print SDecoder._mapToBytes(SDecoder._mapToSymbols(SDecoder._groupIn32(myPacket.messageInChip)))
 
-        print "\"" + IQ + "\"" + " : " + "\"" + strr + "\","
-        print "\"" + _I_Q + "\"" + " : " + "\"" + strr + "\","
-        print "\"" + Q_I + "\"" + " : " + "\"" + strr + "\","
-        print "\"" + _QI + "\"" + " : " + "\"" + strr + "\","
+        print I_est
+        print Q_est
 
-        print chip2Symbol["10010011110001011110111000100001"]
+        #print SDecoder._groupIn32(SDecoder._mergeIQ(I_est,Q_est))
+
+        plt.plot(receivedSignal.real[:132],'r')
+        plt.plot(receivedSignal.imag[:132],'b')
+        plt.show()
+
+        #start = 0
+        #rang = 32
+        #end = start + rang
+        #
+        #strr = "0000"
+        #temp = myPacket.symbolToChip([strr,strr])
+        #
+        #I = temp[start:end][0::2]
+        #Q = temp[start:end][1::2]
+        #I_inv = [str(1 - int(i)) for i in temp[start:end][0::2]]
+        #I_inv = "".join(I_inv)
+        #Q_inv = [str(1 - int(i)) for i in temp[start:end][1::2]]
+        #Q_inv = "".join(Q_inv)
+        #
+        #print " I = ",I
+        #print "-I = ",I_inv
+        #print " Q = ",Q
+        #print "-Q = ",Q_inv
+        #
+        #IQ   = ""
+        #_I_Q = ""
+        #Q_I  = ""
+        #_QI  = ""
+        #for i in range(len(I)):
+        #    IQ   += I[i]     + Q[i]
+        #    _I_Q += I_inv[i] + Q_inv[i]
+        #    Q_I  += Q[i]     + I_inv[i]
+        #    _QI  += Q_inv[i] + I[i]
+        #
+        #print "\"" + IQ + "\"" + " : " + "\"" + strr + "\","
+        #print "\"" + _I_Q + "\"" + " : " + "\"" + strr + "\","
+        #print "\"" + Q_I + "\"" + " : " + "\"" + strr + "\","
+        #print "\"" + _QI + "\"" + " : " + "\"" + strr + "\","
+        #
+        #print chip2Symbol["10010011110001011110111000100001"]
