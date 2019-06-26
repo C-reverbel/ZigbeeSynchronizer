@@ -107,7 +107,7 @@ class SymbolDecoder:
     def __init__(self, sampleRate):
         pass
 
-    
+
     def _mapToBytes(self,symbolsList):
         result = []
         for i in range(len(symbolsList) / 2):
