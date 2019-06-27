@@ -131,7 +131,6 @@ if __name__ == "__main__":
     xx = np.arange(len(pltX))
 
     if not DEBUG:
-
         plt.bar(xx,errPlt,align='edge',width=1)
         plt.xticks(xx, pltX)
         plt.title("Frequency estimation error histogram for " + str(number_of_tests) + " tests\n"
@@ -143,7 +142,7 @@ if __name__ == "__main__":
         plt.grid(axis='y')
         plt.show()
 
-    temp = sum(abs(i)>2000 for i in err)
+    temp = sum(abs(i) > 2000 for i in err)
     print "Points with error greather than 2000 Hz: ", temp, "percentage:", 100 * temp/number_of_tests, "%"
     stringg = [str(pltX[i])+" <-> "+str(pltX[i+1])+" = "+str(100*float(errPlt[i])/number_of_tests)+" %" for i in range(len(pltX)-1)]
     for i in range(len(stringg)):
