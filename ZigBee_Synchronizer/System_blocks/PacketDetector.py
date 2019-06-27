@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from random import randint
 
 class PacketDetector:
-    def __init__(self, sampleRate, correlationSize, correlationDelay, secondCalculationDelay):
+    def __init__(self, sampleRate, correlationSize = 16, correlationDelay = 8, secondCalculationDelay = 16):
         self.sampleRate = sampleRate
         self.N = correlationSize
         self.T = correlationDelay
@@ -76,8 +76,8 @@ if __name__ == "__main__":
         # Zigbee packet
         sampleRate = 8
         pd_correlationSize = 16
-        pd_delay = 32
-        pd_delaySecondComputation = 8
+        pd_delay = 8
+        pd_delaySecondComputation = 16
         if(DEBUG):
             zigbeePayloadNbOfBytes = 5
             freqOffset = 0.0
