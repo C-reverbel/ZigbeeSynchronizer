@@ -107,6 +107,12 @@ class SymbolDecoder:
     def __init__(self, sampleRate):
         pass
 
+    def decode(self, Ibits, Qbits):
+        IQbits = self._mergeIQ(Ibits, Qbits)
+        symbols =  self._mapToSymbols(self._groupIn32(IQbits))
+        payload = self._findPayloadInSymbols(symbols)
+        return payload
+
 
     def _mapToBytes(self,symbolsList):
         result = []
@@ -114,9 +120,39 @@ class SymbolDecoder:
             temp = symbolsList[2 * i:2 * i + 2]
             temp = "".join([str(j) for j in temp])
             result.append(temp)
-        print result
-    def _mapToSymbols(self,chipList):
-        result = [chip2Symbol[j] for j in chipList]
+        return result
+
+    def _findPayloadInSymbols(self, symbols):
+        pattern = ['0000','0111','1010']
+        sfdIndex = self._indexOfPattern(symbols,pattern)
+        payloadIndex = sfdIndex + 2
+        try:
+            self.SFD = int("".join([str(j) for j in symbols[sfdIndex+1:sfdIndex-1:-1]]),2)
+        except:
+            return -1
+        payload = self._mapToBytes(symbols[payloadIndex:])
+        return payload
+
+    def _indexOfPattern(self,vector,pattern):
+        try:
+            n = vector.__len__()
+        except:
+            return -1
+        boolVect = []
+        for i in range(n-2):
+            boolVect.append((vector[i] == pattern[0]) &
+                            (vector[i+1] == pattern[1]) &
+                            (vector[i+2] == pattern[2])
+            )
+        index = [i+3 for i,val in enumerate(boolVect) if val]
+        return index[0]
+
+    def _mapToSymbols(self, chipList):
+        try:
+            result = [chip2Symbol[j] for j in chipList]
+        except:
+            print chipList
+            result = -1
         return result
     def _groupIn32(self,vect):
         result = []

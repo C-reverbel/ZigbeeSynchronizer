@@ -81,7 +81,7 @@ if __name__ == "__main__":
         if(DEBUG):
             zigbeePayloadNbOfBytes = 5
             freqOffset = 0.0
-            phaseOffset = 0.
+            phaseOffset = 0.0
             SNR = 10.
         else:
             zigbeePayloadNbOfBytes = 1

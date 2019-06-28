@@ -29,7 +29,7 @@ class TimeSynchronizer:
         for i in range(size):
             self.correlation.append(np.correlate(self.recPhase[startSample + i:startSample + self.Nk + i], self.kernel))
         self.index = np.argmax(self.correlation)
-        return self.index
+        return self.index - 4
 
 
 if __name__ == "__main__":
