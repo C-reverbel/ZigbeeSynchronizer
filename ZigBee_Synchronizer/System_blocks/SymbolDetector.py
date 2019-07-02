@@ -19,8 +19,8 @@ class SymbolDetector:
         Ioffset = 0
         Qoffset = 0
         # search first 10 elements of both arrays for maximum index
-        maxI = np.max(abs(self.corrI[:6]))
-        maxQ = np.max(abs(self.corrQ[:6]))
+        maxI = np.max((self.corrI[:6]))
+        maxQ = np.max((self.corrQ[:6]))
         # discover whether I or Q comes first
         if maxI > maxQ:         # IQ
             Qoffset = 4
@@ -67,11 +67,11 @@ class SymbolDetector:
 if __name__ == "__main__":
     DEBUG = 0
     errCount = 0
-    number_of_tests = 100
+    number_of_tests = 10000
     for j in range(number_of_tests):
         # Zigbee packet
         sampleRate = 8
-        zigbeePayloadNbOfBytes = 127
+        zigbeePayloadNbOfBytes = 1
         if(DEBUG):
             freqOffset = 0.0
             phaseOffset = 0.0
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         ## CPS ##
         ## === ##
         synchronizer = CPS(sampleRate)
-        correctedSignal, phaseVector, _ = synchronizer.costasLoop(850000., preCorrectedSignal)
+        correctedSignal, phaseVector, _ = synchronizer.costasLoop(100000., preCorrectedSignal)
 
         # Ideal I and Q messages
         I = [int(i) for i in myPacket.messageI]
@@ -129,15 +129,14 @@ if __name__ == "__main__":
         I_est, Q_est = SD.detect(correctedSignal[ts_index:])
         print SD._discoverQuadrant(),
 
-
         errI = 0
         errQ = 0
 
         for i in range(N):
-            if I[i] != I_est[i]:
+            if I[i] != I_est[i] and I[i] != Q_est[i]:
                 errI += 1
-            if Q[i] != Q_est[i]:
-                errQ += 1
+            #if Q[i] != Q_est[i]:
+            #    errQ += 1
         print "TEST ", j+1,
         if errI or errQ:
             errCount += 1
@@ -169,10 +168,15 @@ if __name__ == "__main__":
             #plt.plot(gardQ[plotMin:plotMax], '-go')
             plt.show()
         if errI or errQ or DEBUG:
-            lim = leadingNoiseSamples + 100
+            start = leadingNoiseSamples + 512
+            lim = start + 100
             plt.axvline(x=pd_index-leadingNoiseSamples, linewidth=4, color='k')
-            plt.plot(correctedSignal.real[leadingNoiseSamples:lim], linewidth=0.5, color='b')
-            plt.plot(correctedSignal.imag[leadingNoiseSamples:lim], linewidth=0.5, color='r')
+            plt.plot(correctedSignal.real[leadingNoiseSamples:leadingNoiseSamples+100], linewidth=0.5, color='b')
+            plt.plot(correctedSignal.imag[leadingNoiseSamples:leadingNoiseSamples+100], linewidth=0.5, color='r')
+            plt.show()
+            #plt.axvline(x=pd_index-leadingNoiseSamples, linewidth=4, color='k')
+            plt.plot(correctedSignal.real[start:lim], linewidth=0.5, color='b')
+            plt.plot(correctedSignal.imag[start:lim], linewidth=0.5, color='r')
             plt.show()
     print "============================="
     print "TOTAL ERRORS = ", errCount, "/", number_of_tests
