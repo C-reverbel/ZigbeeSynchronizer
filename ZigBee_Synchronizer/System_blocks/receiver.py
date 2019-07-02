@@ -37,35 +37,38 @@ class ZigbeeReceiver:
         ## CPS ##
         ## === ##
         synchronizer = CPS(self.sampleRate)
-        correctedSignal, phaseVector, _ = synchronizer.costasLoop(850000., preCorrectedSignal)
+        self.correctedSignal, phaseVector, _ = synchronizer.costasLoop(850000., preCorrectedSignal)
         ## Symbol Detector ##
         ## =============== ##
         symbolDetector = SymbolDetector(self.sampleRate)
-        self.Ibits, self.Qbits = symbolDetector.detect(correctedSignal[self.ts_index:])
+        self.Ibits, self.Qbits = symbolDetector.detect(self.correctedSignal[self.ts_index:])
+        #self.Ibits, self.Qbits = symbolDetector.detect(rawZigbeePacket[self.ts_index:])
         ## Symbol Decoder ##
         ## ============== ##
-        symbolDecoder = SymbolDecoder(self.sampleRate)
-        self.payload = symbolDecoder.decode(self.Ibits,self.Qbits)
-        return self.payload
+        # symbolDecoder = SymbolDecoder(self.sampleRate)
+        # self.payload = symbolDecoder.decode(self.Ibits, self.Qbits)
+        # return self.payload
+        return -1
 
 if __name__ == "__main__":
     DEBUG = 0
-    err = []
+    err = 0
     errCount = 0
-    number_of_tests = 10
+    number_of_tests = 100
     for j in range(number_of_tests):
+        err = 0
         # Zigbee packet
         sampleRate = 8
         if(DEBUG):
-            zigbeePayloadNbOfBytes = 10
+            zigbeePayloadNbOfBytes = 1
             freqOffset = 0.0
             phaseOffset = 0.0
             SNR = 15.
         else:
             zigbeePayloadNbOfBytes = randint(5,127)
-            freqOffset = 0#float(randint(-200000,200000))
-            phaseOffset = 0#float(randint(0,360))
-            SNR = 100.
+            freqOffset = 0.0#float(randint(-200000,200000))
+            phaseOffset = 0.0#float(randint(0,360))
+            SNR = 15.
         leadingNoiseSamples = randint(1,20) * 50
         trailingNoiseSamples = 0
 
@@ -94,30 +97,37 @@ if __name__ == "__main__":
         symbolDecoder = SymbolDecoder(sampleRate)
         idealIQbytes = symbolDecoder._mapToBytes(symbolDecoder._mapToSymbols(symbolDecoder._groupIn32(myPacket.messageInChip)))
 
+        ind = (receiver.ts_index - leadingNoiseSamples) / 8
+
+        idealIbits = [int(x) for x in myPacket.messageI[ind:]]
+        idealQbits = [int(x) for x in myPacket.messageQ[ind:]]
         # compare results
         print "TEST", j+1, "PACKET SIZE =", zigbeePayloadNbOfBytes,
-        if (idealIQbytes[6:] == payload):
+        if (idealIbits == receiver.Ibits or idealQbits == receiver.Ibits):
             print " OK"
         else:
             print " ERROR"
-            print idealIQbytes[6:]
-            print payload
+            print idealIbits
+            print receiver.Ibits
+            err = 1
             errCount += 1
 
-        if(DEBUG):
-            print idealIQbytes[6:]
+        if(DEBUG or err):
+            print idealIQbytes[:]
             print payload
             plt.subplot(2,1,1)
-            plt.plot(receivedSignal.real[:receiver.ts_index+132],'b')
+            plt.plot(receivedSignal.real[:receiver.ts_index+132], 'b')
             plt.axvline(x=receiver.ts_index, linewidth=2, color='k')
             plt.subplot(2,1,2)
-            plt.plot(receivedSignal.real[receiver.ts_index:receiver.ts_index+129],'-xb')
+            plt.plot(receivedSignal.real[receiver.ts_index:receiver.ts_index+129], '-xb')
+            plt.plot(receiver.correctedSignal.real[receiver.ts_index:receiver.ts_index + 129], '-xk')
             plt.show()
             plt.subplot(2, 1, 1)
-            plt.plot(receivedSignal.imag[:receiver.ts_index + 132],'r')
+            plt.plot(receivedSignal.imag[:receiver.ts_index + 132], 'r')
             plt.axvline(x=receiver.ts_index, linewidth=2, color='k')
             plt.subplot(2, 1, 2)
             plt.plot(receivedSignal.imag[receiver.ts_index:receiver.ts_index + 129], '-xr')
+            plt.plot(receiver.correctedSignal.imag[receiver.ts_index+4*128:receiver.ts_index + 129+4*128], '-xk')
             plt.show()
 
     print "============================="

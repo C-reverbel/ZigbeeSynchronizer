@@ -1,17 +1,32 @@
 from System_blocks.ZigBeePacket import ZigBeePacket
 from System_blocks.WirelessChannel import WirelessChannel
-from System_blocks.CFS_iterative import CFS_iterative
+from System_blocks.TimeSync import TimeSynchronizer
 from System_blocks.CFS_direct import CFS_direct
 from System_blocks.CPS import CPS
-import utils
+from System_blocks.PacketDetector import PacketDetector
+
 import numpy as np
 import matplotlib.pyplot as plt
 from random import randint
+
 
 class SymbolDetector:
     def __init__(self, sampleRate):
         self.kernel = [1, 1, 1]
         self.sampleRate = sampleRate
+
+    def _discoverQuadrant(self):
+        Ioffset = 0
+        Qoffset = 0
+        # search first 10 elements of both arrays for maximum index
+        maxI = np.max(abs(self.corrI[:6]))
+        maxQ = np.max(abs(self.corrQ[:6]))
+        # discover whether I or Q comes first
+        if maxI > maxQ:         # IQ
+            Qoffset = 4
+        else:                   # QI
+            Ioffset = 4
+        return Ioffset, Qoffset
 
     def detect(self, vector):
         N = (len(vector.real) - 4) / self.sampleRate
@@ -20,6 +35,8 @@ class SymbolDetector:
 
         self.satI = [1 if i > 0 else 0 for i in self.corrI]
         self.satQ = [1 if q > 0 else 0 for q in self.corrQ]
+        # discover whether I or Q comes first
+        Ioffset, Qoffset = self._discoverQuadrant()
         # Symbol converter
         tempI = 0
         tempQ = 0
@@ -27,12 +44,12 @@ class SymbolDetector:
         outQ = []
         for i in range(self.satI.__len__() - 4):
             # I
-            tempI += 1 if self.satI[i] > 0 else -1
+            tempI += 1 if self.satI[i + Ioffset] > 0 else -1
             if i % 8 == 0:
                 outI.append(1 if tempI > 0 else 0)
                 tempI = 0
             # Q
-            tempQ += 1 if self.satQ[i + 4] > 0 else -1
+            tempQ += 1 if self.satQ[i + Qoffset] > 0 else -1
             if i % 8 == 0:
                 outQ.append(1 if tempQ > 0 else 0)
                 tempQ = 0
@@ -48,9 +65,9 @@ class SymbolDetector:
 
 
 if __name__ == "__main__":
-    DEBUG = 1
+    DEBUG = 0
     errCount = 0
-    number_of_tests = 1
+    number_of_tests = 100
     for j in range(number_of_tests):
         # Zigbee packet
         sampleRate = 8
@@ -58,12 +75,12 @@ if __name__ == "__main__":
         if(DEBUG):
             freqOffset = 0.0
             phaseOffset = 0.0
-            SNR = 7.
+            SNR = 700.
         else:
             freqOffset = 0.0#float(randint(-200000,200000))
             phaseOffset = 0.0#float(randint(0,360))
-            SNR = 6.
-        leadingNoiseSamples = 0
+            SNR = 100.
+        leadingNoiseSamples = randint(1,20) * 50
         trailingNoiseSamples = 0
 
         if(DEBUG):
@@ -83,53 +100,80 @@ if __name__ == "__main__":
         # receive signal and filter it (change filter order to ZERO to disable filtering)
         receivedSignal = myChannel.receive(myPacket.IQ, leadingNoiseSamples, trailingNoiseSamples)
 
+        ## Packet Detector ##
+        ## =============== ##
+        packetDetector = PacketDetector(sampleRate)
+        pd_index = packetDetector.detectPacket(receivedSignal)
+        ## TimeSync ##
+        ## ======== ##
+        timeSync = TimeSynchronizer(sampleRate)
+        recPhase, ts_index = timeSync.getSyncPhase(receivedSignal, pd_index, 149)
+        ## CFS ##
+        ## === ##
+        idealPhase = np.unwrap(np.angle(myPacket.IQ[4:153]))  # 149 points
+        fit = np.polyfit(np.arange(0, 149, 1), recPhase - idealPhase, 1)
+        freqEstimation = fit[0] * 4000000 / np.pi
+        CFS = CFS_direct(sampleRate, 149)
+        preCorrectedSignal = CFS.compensateFrequencyAndPhase(freqEstimation, 0.0, receivedSignal)
+        ## CPS ##
+        ## === ##
+        synchronizer = CPS(sampleRate)
+        correctedSignal, phaseVector, _ = synchronizer.costasLoop(850000., preCorrectedSignal)
+
         # Ideal I and Q messages
         I = [int(i) for i in myPacket.messageI]
         Q = [int(q) for q in myPacket.messageQ]
         N = I.__len__()
 
         SD = SymbolDetector(8)
-        I_est, Q_est = SD.detect(receivedSignal)
+        I_est, Q_est = SD.detect(correctedSignal[ts_index:])
+        print SD._discoverQuadrant(),
+
 
         errI = 0
         errQ = 0
-
-        plt.plot(receivedSignal.real[:100],'-x')
-        plt.plot(SD.corrI[:100],'-x')
-        plt.axhline(y=0)
-        plt.show()
-
 
         for i in range(N):
             if I[i] != I_est[i]:
                 errI += 1
             if Q[i] != Q_est[i]:
                 errQ += 1
-        print "TEST ", j+1
+        print "TEST ", j+1,
         if errI or errQ:
             errCount += 1
+            print "ERROR"
             print "I = ", errI, "/", N, "error"
             print "Q = ", errQ, "/", N, "error"
             print "I  = ", I
             print "Ie = ", I_est, '\n'
-            print "Q  = ",Q
+            print "Q  = ", Q
             print "Qe = ", Q_est, '\n'
+        else:
+            print "OK"
 
         if(DEBUG):
-            plotMin = 2500
-            rang = 60
+            plotMin = 0
+            rang = 20
             plotMax = rang + plotMin
+            plt.subplot(2, 1, 1)
+            plt.plot(SD.corrI[plotMin:plotMax])
+            plt.plot(SD.satI[plotMin:plotMax], 'x')
+            plt.plot(receivedSignal.real[plotMin+leadingNoiseSamples:plotMax+leadingNoiseSamples], 'r')
+            plt.axhline(y=0, color='k')
+            #plt.plot(gardI[plotMin:plotMax],'-go')
+            plt.subplot(2, 1, 2)
             plt.plot(SD.corrQ[plotMin:plotMax])
-            plt.plot(SD.satQ[plotMin:plotMax],'x')
-            plt.plot(receivedSignal.imag[plotMin:plotMax],'r')
-            plt.plot(SD.kernel,'g')
-            plt.axhline(y=0)
+            plt.plot(SD.satQ[plotMin:plotMax], 'x')
+            plt.plot(receivedSignal.imag[plotMin+leadingNoiseSamples:plotMax+leadingNoiseSamples], 'r')
+            plt.axhline(y=0, color='k')
+            #plt.plot(gardQ[plotMin:plotMax], '-go')
             plt.show()
-        if(DEBUG):
-            print I_est
-            print I, '\n'
-            print Q_est
-            print Q, '\n'
+        if errI or errQ or DEBUG:
+            lim = leadingNoiseSamples + 100
+            plt.axvline(x=pd_index-leadingNoiseSamples, linewidth=4, color='k')
+            plt.plot(correctedSignal.real[leadingNoiseSamples:lim], linewidth=0.5, color='b')
+            plt.plot(correctedSignal.imag[leadingNoiseSamples:lim], linewidth=0.5, color='r')
+            plt.show()
     print "============================="
     print "TOTAL ERRORS = ", errCount, "/", number_of_tests
 

@@ -1,14 +1,10 @@
 from System_blocks.ZigBeePacket import ZigBeePacket
 from System_blocks.WirelessChannel import WirelessChannel
-from System_blocks.TimeSync import TimeSynchronizer
-from System_blocks.CFS_direct import CFS_direct
-from System_blocks.CPS import CPS
-from System_blocks.SymbolDetector import SymbolDetector
 
-import utils
 import numpy as np
 import matplotlib.pyplot as plt
 from random import randint
+
 
 class PacketDetector:
     def __init__(self, sampleRate, correlationSize = 16, correlationDelay = 8, secondCalculationDelay = 16):
@@ -67,9 +63,9 @@ class PacketDetector:
         return C, P, M
 
 if __name__ == "__main__":
-    DEBUG = 0
+    DEBUG = 1
     errCount = 0
-    number_of_tests = 10000
+    number_of_tests = 1
     delta =[]
     for j in range(number_of_tests):
         err = 0
@@ -123,7 +119,7 @@ if __name__ == "__main__":
             print " ERROR"
             errCount += 1
             err = 1
-        if(err):
+        if(err or DEBUG):
             lim = leadingNoiseSamples + 100
             plt.axvline(x=index, linewidth=4, color='k')
             plt.plot(receivedSignal.real[:lim], linewidth=0.5)
