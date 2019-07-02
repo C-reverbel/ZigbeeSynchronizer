@@ -68,7 +68,7 @@ if __name__ == "__main__":
             zigbeePayloadNbOfBytes = randint(5,127)
             freqOffset = 0.0#float(randint(-200000,200000))
             phaseOffset = 0.0#float(randint(0,360))
-            SNR = 15.
+            SNR = 150.
         leadingNoiseSamples = randint(1,20) * 50
         trailingNoiseSamples = 0
 

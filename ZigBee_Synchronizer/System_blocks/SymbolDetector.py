@@ -67,11 +67,11 @@ class SymbolDetector:
 if __name__ == "__main__":
     DEBUG = 0
     errCount = 0
-    number_of_tests = 10000
+    number_of_tests = 1000
     for j in range(number_of_tests):
         # Zigbee packet
         sampleRate = 8
-        zigbeePayloadNbOfBytes = 1
+        zigbeePayloadNbOfBytes = 5
         if(DEBUG):
             freqOffset = 0.0
             phaseOffset = 0.0
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         ## CPS ##
         ## === ##
         synchronizer = CPS(sampleRate)
-        correctedSignal, phaseVector, _ = synchronizer.costasLoop(100000., preCorrectedSignal)
+        correctedSignal, phaseVector, _ = synchronizer.costasLoop(850000., preCorrectedSignal)
 
         # Ideal I and Q messages
         I = [int(i) for i in myPacket.messageI]
@@ -126,57 +126,48 @@ if __name__ == "__main__":
         N = I.__len__()
 
         SD = SymbolDetector(8)
-        I_est, Q_est = SD.detect(correctedSignal[ts_index:])
+        I_est, Q_est = SD.detect(correctedSignal[ts_index+256:])
+        I_est_inv = [1 - i for i in I_est]
+        Q_est_inv = [1 - i for i in Q_est]
         print SD._discoverQuadrant(),
 
         errI = 0
         errQ = 0
 
-        for i in range(N):
-            if I[i] != I_est[i] and I[i] != Q_est[i]:
-                errI += 1
-            #if Q[i] != Q_est[i]:
-            #    errQ += 1
+        N_est = I_est.__len__()
+        N_ideal = I.__len__()
+        N_delta = abs(N_ideal - N_est)
+
+        if I[N_delta:] != I_est and I[N_delta:] != Q_est and I[N_delta:] != Q_est_inv and I[N_delta:] != I_est_inv:
+            errI += 1
+
         print "TEST ", j+1,
         if errI or errQ:
             errCount += 1
             print "ERROR"
-            print "I = ", errI, "/", N, "error"
-            print "Q = ", errQ, "/", N, "error"
-            print "I  = ", I
+            print "I  = ", I[N_delta:]
             print "Ie = ", I_est, '\n'
-            print "Q  = ", Q
+            print "Q  = ", Q[N_delta:]
             print "Qe = ", Q_est, '\n'
         else:
             print "OK"
 
-        if(DEBUG):
-            plotMin = 0
-            rang = 20
-            plotMax = rang + plotMin
-            plt.subplot(2, 1, 1)
-            plt.plot(SD.corrI[plotMin:plotMax])
-            plt.plot(SD.satI[plotMin:plotMax], 'x')
-            plt.plot(receivedSignal.real[plotMin+leadingNoiseSamples:plotMax+leadingNoiseSamples], 'r')
-            plt.axhline(y=0, color='k')
-            #plt.plot(gardI[plotMin:plotMax],'-go')
-            plt.subplot(2, 1, 2)
-            plt.plot(SD.corrQ[plotMin:plotMax])
-            plt.plot(SD.satQ[plotMin:plotMax], 'x')
-            plt.plot(receivedSignal.imag[plotMin+leadingNoiseSamples:plotMax+leadingNoiseSamples], 'r')
-            plt.axhline(y=0, color='k')
-            #plt.plot(gardQ[plotMin:plotMax], '-go')
-            plt.show()
         if errI or errQ or DEBUG:
-            start = leadingNoiseSamples + 512
-            lim = start + 100
-            plt.axvline(x=pd_index-leadingNoiseSamples, linewidth=4, color='k')
-            plt.plot(correctedSignal.real[leadingNoiseSamples:leadingNoiseSamples+100], linewidth=0.5, color='b')
-            plt.plot(correctedSignal.imag[leadingNoiseSamples:leadingNoiseSamples+100], linewidth=0.5, color='r')
+            plotMin = ts_index+256
+            rang = 100
+            plotMax = plotMin + rang
+            secondPlotDelay = 256
+
+            plt.subplot(2,1,1)
+            plt.plot(correctedSignal.real[plotMin:plotMax], linewidth=0.5, color='b')
+            plt.plot(correctedSignal.imag[plotMin:plotMax], linewidth=0.5, color='r')
+            plt.axhline(y=0, color='k')
+            plt.subplot(2,1,2)
+            plt.plot(correctedSignal.real[plotMin + secondPlotDelay:plotMax + secondPlotDelay], linewidth=0.5, color='b')
+            plt.plot(correctedSignal.imag[plotMin + secondPlotDelay:plotMax + secondPlotDelay], linewidth=0.5, color='r')
+            plt.axhline(y=0,color='k')
             plt.show()
-            #plt.axvline(x=pd_index-leadingNoiseSamples, linewidth=4, color='k')
-            plt.plot(correctedSignal.real[start:lim], linewidth=0.5, color='b')
-            plt.plot(correctedSignal.imag[start:lim], linewidth=0.5, color='r')
+
             plt.show()
     print "============================="
     print "TOTAL ERRORS = ", errCount, "/", number_of_tests
