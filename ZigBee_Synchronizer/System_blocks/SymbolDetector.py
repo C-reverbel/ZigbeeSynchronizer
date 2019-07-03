@@ -65,21 +65,21 @@ class SymbolDetector:
 
 
 if __name__ == "__main__":
-    DEBUG = 0
+    DEBUG = 1
     errCount = 0
-    number_of_tests = 1000
+    number_of_tests = 1
     for j in range(number_of_tests):
         # Zigbee packet
         sampleRate = 8
         zigbeePayloadNbOfBytes = 5
         if(DEBUG):
             freqOffset = 0.0
-            phaseOffset = 0.0
-            SNR = 700.
+            phaseOffset = 270.0
+            SNR = 10.
         else:
-            freqOffset = 0.0#float(randint(-200000,200000))
-            phaseOffset = 0.0#float(randint(0,360))
-            SNR = 100.
+            freqOffset = float(randint(-200000,200000))
+            phaseOffset = float(randint(0,360))
+            SNR = 500.
         leadingNoiseSamples = randint(1,20) * 50
         trailingNoiseSamples = 0
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         ## CPS ##
         ## === ##
         synchronizer = CPS(sampleRate)
-        correctedSignal, phaseVector, _ = synchronizer.costasLoop(850000., preCorrectedSignal)
+        correctedSignal, phaseVector, _ = synchronizer.costasLoop(100000., preCorrectedSignal)
 
         # Ideal I and Q messages
         I = [int(i) for i in myPacket.messageI]
@@ -156,7 +156,7 @@ if __name__ == "__main__":
             plotMin = ts_index+256
             rang = 100
             plotMax = plotMin + rang
-            secondPlotDelay = 256
+            secondPlotDelay = 256+256
 
             plt.subplot(2,1,1)
             plt.plot(correctedSignal.real[plotMin:plotMax], linewidth=0.5, color='b')
@@ -168,7 +168,22 @@ if __name__ == "__main__":
             plt.axhline(y=0,color='k')
             plt.show()
 
-            plt.show()
+
+
+        N = myPacket.I.__len__()
+
+        maxTime = (1e-6 / sampleRate) * N
+        timeStep = 1e-6 / sampleRate
+        timeUs = np.arange(0, maxTime, timeStep) * 1e6
+
+        start = ts_index + 256
+        nbOfSamplesToPlot = 128
+        plt.plot(timeUs[:nbOfSamplesToPlot], 180*np.unwrap(np.angle(correctedSignal[start:start+nbOfSamplesToPlot]))/np.pi)
+        plt.xticks(np.arange(0, nbOfSamplesToPlot / sampleRate + 0.5, 0.5))
+        plt.grid(b=None, which='major', axis='both')
+        plt.show()
+        print 180*np.angle(correctedSignal[start])/np.pi
+
     print "============================="
     print "TOTAL ERRORS = ", errCount, "/", number_of_tests
 

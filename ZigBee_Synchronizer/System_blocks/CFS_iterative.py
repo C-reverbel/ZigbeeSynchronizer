@@ -98,7 +98,7 @@ class CFS_iterative:
 
 if __name__ == "__main__":
     # preamble lasts 1024 samples
-    n = 2
+    n = 1
     nbOfSamples = 132+(n-1)*128#132
     sampleRate = 8
     freqOffset = 195.8e3
