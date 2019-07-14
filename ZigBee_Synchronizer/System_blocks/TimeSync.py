@@ -20,8 +20,8 @@ class TimeSynchronizer:
         estDelay = self._estimateDelay(vector, startSample, self.computeRange)
         start = startSample + estDelay - self.goldDelay
         end = start + phaseSize
-        # return S0 phase and packet start index
-        return self.recPhase[start:end], start
+        # return S0 phase and packet start index (add sampleRate/2 to the phase to skip first zero samples)
+        return self.recPhase[start+self.sampleRate/2:end+self.sampleRate/2], start
 
     def _estimateDelay(self, vector, startSample, size):
         self.recPhase = np.unwrap(np.angle(vector))
